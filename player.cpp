@@ -18,8 +18,10 @@
 #define SPEED_W ((0.3 * 120) / DEL_DELAY)
 #define SPEED_H ((0.3 * 120) / DEL_DELAY)
 
-Player::Player()
+Player::Player(const QVector<QRect> &coords_img, const QImage &img, QSize size)
+    : Sprite(coords_img, img, size)
 {
+
 }
 
 void Player::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -225,4 +227,18 @@ void PlayerController::rectSceneChanged(const QRectF &rect)
 void PlayerController::endGame()
 {
     m_game = false;
+}
+
+bool PlayerController::moveTo(qreal newX, qreal newY, const Player *player)
+{
+    // TODO: сделать метод длины и высоты
+    if( 0 <= newX && newX <= (m_rectScene.width()  /*- player->width()*/) &&
+        0 <= newY && newY <= (m_rectScene.height() /*- player->height()*/)  ) {
+        auto oldX = player->x();
+        auto oldY = player->y();
+
+        m_scene->collidingItems(player);
+
+        // TODO: доделать
+    }
 }

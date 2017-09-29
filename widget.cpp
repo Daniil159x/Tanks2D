@@ -18,19 +18,47 @@
 
 #include <QTimer>
 
-#define M 10
-#define N 15
+#define COL 4
+#define ROW 2
+
+#define W 149
+#define H 187
+
+#define W_SPRITE W
+#define H_SPRITE ( (static_cast<qreal>(H)/W) * W_SPRITE )
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Widget)
 {
     ui->setupUi(this);
+    this->resize(COL*W_SPRITE, static_cast<int>(ROW*H_SPRITE));
+
+
+    qDebug() << W_SPRITE << H_SPRITE;
 
     auto *ptr_view = new MyGraphicsView(this);
-    auto *ptr_scene = new MyGraphicsScene(this);
 
-    ptr_scene->setSceneRect(0, 0, N*W, M*H);
+    auto *ptr_scene = new MyGraphicsScene(this);
+    ptr_scene->setSceneRect(0, 0, COL*W_SPRITE, ROW*H_SPRITE);
+
+
+    QImage img("/home/daniil159x/Qt_project/Tanks2D/test_sprite.jpg");
+
+    Sprite *array_sprite[8] = { nullptr };
+
+    for(int i = 0; i < ROW; ++i){
+        for(int j = 0; j < COL; ++j){
+            array_sprite[i * 4 + j] = new Sprite( {j * W, i * H, W, H},
+                                                  img,
+                                                  {static_cast<int>(W_SPRITE), static_cast<int>(H_SPRITE)} );
+            array_sprite[i * 4 + j]->setPos(W_SPRITE*j, H_SPRITE*i);
+
+            ptr_scene->addItem(array_sprite[i * 4 + j]);
+        }
+    }
+
+
 
     auto *ptr_player = new Player();
     auto *ptr_player2 = new Player();

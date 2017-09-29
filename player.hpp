@@ -5,13 +5,16 @@
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <chrono>
+#include <QVector>
 
-class Player : public QGraphicsObject
+#include "sprite.hpp"
+
+class Player : /*virtual*/ public QObject, public Sprite
 {
     Q_OBJECT
 
 public:
-    Player();
+    Player(const QVector<QRect> &coords_img, const QImage &img, QSize size);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
@@ -20,6 +23,8 @@ public:
 
 public slots:
     void editPos(qreal x, qreal y);
+
+private:
 };
 
 
@@ -40,6 +45,8 @@ signals:
     void newPos_forPl_2(qreal x, qreal y);
 
 private:
+
+    bool moveTo(qreal newX, qreal newY, const Player *player);
 
     bool m_game = false;
     enum class dir {
