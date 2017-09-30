@@ -3,6 +3,7 @@
 
 #include <QGraphicsItem>
 #include <QRect>
+#include "enums.hpp"
 
 class Sprite : public QGraphicsItem
 {
@@ -20,7 +21,15 @@ public:
 
     virtual void nextFrame();
 
-    QSize getSize() const;
+    QSize getSize() const {
+        return m_size;
+    }
+    int width() const {
+        return m_size.width();
+    }
+    int height() const {
+        return m_size.height();
+    }
 
     virtual bool collidesWithItem(const QGraphicsItem *other, Qt::ItemSelectionMode mode = Qt::IntersectsItemShape) const override;
 

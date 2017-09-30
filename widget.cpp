@@ -3,7 +3,9 @@
 
 #include <mygraphicsscene.hpp>
 #include "mygraphicsview.hpp"
-#include "player.hpp"
+#include "playersprite.hpp"
+#include "playercontroller.hpp"
+
 #include <QGraphicsScene>
 
 #include <QGraphicsPolygonItem>
@@ -45,23 +47,32 @@ Widget::Widget(QWidget *parent) :
 
     QImage img("/home/daniil159x/Qt_project/Tanks2D/test_sprite.jpg");
 
-    Sprite *array_sprite[8] = { nullptr };
+//    Sprite *array_sprite[8] = { nullptr };
 
-    for(int i = 0; i < ROW; ++i){
-        for(int j = 0; j < COL; ++j){
-            array_sprite[i * 4 + j] = new Sprite( {j * W, i * H, W, H},
-                                                  img,
-                                                  {static_cast<int>(W_SPRITE), static_cast<int>(H_SPRITE)} );
-            array_sprite[i * 4 + j]->setPos(W_SPRITE*j, H_SPRITE*i);
+//    for(int i = 0; i < ROW; ++i){
+//        for(int j = 0; j < COL; ++j){
+//            array_sprite[i * 4 + j] = new Sprite( {{j * W, i * H, W, H}},
+//                                                  img,
+//                                                  {static_cast<int>(W_SPRITE), static_cast<int>(H_SPRITE)} );
+//            array_sprite[i * 4 + j]->setPos(W_SPRITE*j, H_SPRITE*i);
 
-            ptr_scene->addItem(array_sprite[i * 4 + j]);
-        }
-    }
+//            ptr_scene->addItem(array_sprite[i * 4 + j]);
+//        }
+//    }
 
 
 
-    auto *ptr_player = new Player();
-    auto *ptr_player2 = new Player();
+    auto *ptr_player = new PlayerSprite({
+                                            { 0, 0, 0, 0},
+                                            { 0, 0, W, H}
+                                        }, img, {static_cast<int>(W_SPRITE), static_cast<int>(H_SPRITE)});
+
+    auto *ptr_player2 = new PlayerSprite({
+                                             { 0, 0, 0, 0},
+                                             { W, H, W, H}
+                                         }, img, {static_cast<int>(W_SPRITE), static_cast<int>(H_SPRITE)});
+    ptr_player2->setPos(W_SPRITE*2, H_SPRITE*0.5);
+
     auto *ptr_playyerContrl = new PlayerController(ptr_player, ptr_player2, ptr_scene);
 
     ptr_playyerContrl->moveToThread(&th);

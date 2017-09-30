@@ -29,16 +29,18 @@ SOURCES += \
         widget.cpp \
     mygraphicsview.cpp \
     sprite.cpp \
-    player.cpp \
-    mygraphicsscene.cpp
+    mygraphicsscene.cpp \
+    playersprite.cpp \
+    playercontroller.cpp
 
 HEADERS += \
         widget.h \
     mygraphicsview.hpp \
     sprite.hpp \
-    player.hpp \
     mygraphicsscene.hpp \
-    enums.hpp
+    enums.hpp \
+    playersprite.hpp \
+    playercontroller.hpp
 
 FORMS += \
         widget.ui

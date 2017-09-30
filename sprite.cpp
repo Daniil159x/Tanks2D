@@ -27,7 +27,7 @@ QRectF Sprite::boundingRect() const
 
 int Sprite::type() const
 {
-    return static_cast<int>(types::ignoreCollize);
+    return static_cast<int>(QGraphicsItem::UserType);
 }
 
 void Sprite::nextFrame()
@@ -35,17 +35,12 @@ void Sprite::nextFrame()
     m_currFrame = (m_currFrame + 1) % m_imgs.size();
 }
 
-QSize Sprite::getSize() const
-{
-    return m_size;
-}
-
 bool Sprite::collidesWithItem(const QGraphicsItem *other, Qt::ItemSelectionMode mode) const
 {
-    if(this->type() == static_cast<int>(types::ignoreCollize)) {
+    if(this->type() == static_cast<int>(typeItems::ignoreCollize)) {
         return false;
     }
     else {
-        baseClass::collidesWithItem(other, mode);
+        return baseClass::collidesWithItem(other, mode);
     }
 }
