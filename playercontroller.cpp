@@ -8,15 +8,18 @@ using namespace std::chrono_literals;
 
 // FIX: сделать нормальную скорость
 #define DEL_DELAY 120
-#define SPEED_W ((0.2 * 120) / DEL_DELAY)
+#define SPEED_W ((0.3 * 120) / DEL_DELAY)
 #define SPEED_H ((0.3 * 120) / DEL_DELAY)
+
+#define SPEED_W_BULLET SPEED_W*2
+#define SPEED_H_BULLET SPEED_H*2
 
 #define SHOOT_DELAY 50ms
 
-PlayerController::PlayerController(const PlayerSprite *pl_1, const PlayerSprite *pl_2, const QList<BulletSprite*> &listBullet,
+PlayerController::PlayerController(PlayerSprite *pl_1, PlayerSprite *pl_2, const QList<BulletSprite*> &listBullet,
                                    const QGraphicsScene *scene)
-    : m_players{ {pl_1, &PlayerController::newPos_forPl_1, &PlayerController::newDir_forPl_1, &PlayerController::damage_forPl_1},
-                 {pl_2, &PlayerController::newPos_forPl_2, &PlayerController::newDir_forPl_2, &PlayerController::damage_forPl_2} },
+    : m_players{ {pl_1},
+                 {pl_2} },
       m_bulletList(listBullet),
       m_scene(scene)
 {
@@ -31,128 +34,137 @@ PlayerController::PlayerController(const PlayerSprite *pl_1, const PlayerSprite 
     }
 
     m_rectScene = m_scene->sceneRect();
-
-    connect(this, m_players[0].signal_newPos, m_players[0].m_pl, &PlayerSprite::editPos);
-    connect(this, m_players[1].signal_newPos, m_players[1].m_pl, &PlayerSprite::editPos);
-
-    connect(this, m_players[0].signal_newDir, m_players[0].m_pl, &PlayerSprite::editDir);
-    connect(this, m_players[1].signal_newDir, m_players[1].m_pl, &PlayerSprite::editDir);
-
-    connect(this, m_players[0].signal_damage, m_players[0].m_pl, &PlayerSprite::deleteLater);
-    connect(this, m_players[1].signal_damage, m_players[1].m_pl, &PlayerSprite::deleteLater);
-
-
 }
 
 void PlayerController::game()
 {
     using namespace std::chrono_literals;
 
-    // 2 - if has bullet
-    // 1 - if has collision
-    // 0 - if has not collision
-    auto check_collision = [](const QList<QGraphicsItem*> &list, const QGraphicsItem *ignoreObj) {
-        for(const auto& item : list) {
-            if (item->type() != static_cast<int>(typeItems::ignoreCollize)
-                    && item != ignoreObj) {
-                return 1;
-            }
-            else if(item->type() == static_cast<int>(typeItems::bullet)) {
-                return 2;
-            }
-        }
-        return 0;
-    };
-
     m_game = true;
     while (m_game) {
         bool ctrl = false;
         auto start = std::chrono::steady_clock::now();
 
-        // players
-        for(int i = 0; i < 2; ++i){
+        /// players
+        for(auto &dataPl : m_players){
             // NOTE: возможен баг с тем, что игрок получил урон, а снаряд пролетел
-            qreal Y =  m_players[i].m_pl->y()
-                      -SPEED_H * bool(m_players[i].m_dir & dir_cast(dir::Up))
-                      +SPEED_H * bool(m_players[i].m_dir & dir_cast(dir::Down));
+            qreal Y =  dataPl.m_pl->y()
+                      -SPEED_H * bool(dataPl.m_dir & dir_cast(dir::Up))
+                      +SPEED_H * bool(dataPl.m_dir & dir_cast(dir::Down));
 
             // check possible Y
-            if(!qFuzzyCompare(Y, m_players[i].m_pl->y()) &&
-                    0 <= Y && Y <= (m_rectScene.height() - m_players[i].m_pl->height())) {
+            if(!qFuzzyCompare(Y, dataPl.m_pl->y()) &&
+                    0 <= Y && Y <= (m_rectScene.height() - dataPl.m_pl->height())) {
 
                 // check dir player
-                dir to = (m_players[i].m_pl->y() - Y < 0)? dir::Down : dir::Up;
-                if(m_players[i].m_pl->m_dir != to){
-                    emit (this->*m_players[i].signal_newDir)(to);
+                dir to = (dataPl.m_pl->y() - Y < 0)? dir::Down : dir::Up;
+                if(dataPl.m_pl->m_dir != to){
+                    emit newDir_Player(to, dataPl.m_pl);
                     continue;
                 }
 
                 // check collision
-                auto list = m_scene->items({m_players[i].m_pl->x(), Y, static_cast<qreal>(m_players[i].m_pl->width()),
-                                                                       static_cast<qreal>(m_players[i].m_pl->height())});
-                auto res_check = check_collision(list, m_players[i].m_pl);
+                auto list = m_scene->items({dataPl.m_pl->x(), Y, static_cast<qreal>(dataPl.m_pl->width()),
+                                                                 static_cast<qreal>(dataPl.m_pl->height())});
+                bool collision = false;
+                for(auto item : list) {
+                    if(item == dataPl.m_pl) {
+                        continue;
+                    }
+                    else if(item->type() == static_cast<int>(typeItems::ignoreCollize)) {
+                        continue;
+                    }
+                    else if(item->type() == static_cast<int>(typeItems::bullet)) {
+                        emit newPos(dataPl.m_pl->x(), Y, dataPl.m_pl);
+                        emit damage(static_cast<BulletSprite*>(item), dataPl.m_pl);
+                        collision = true;
+                        break;
+                    }
+                }
 
-                // to move
-                if(res_check == 0){
-                    emit (this->*m_players[i].signal_newPos)(m_players[i].m_pl->x(), Y);
-                    continue;
-                }
-                // move is impossible
-                else if(res_check == 1) {
-                    // nothing
-                }
-                // to move and damage
-                else if(res_check == 2) {
-                    emit (this->*m_players[i].signal_newPos)(m_players[i].m_pl->x(), Y);
-                    emit (this->*m_players[i].signal_damage)();
-                    qDebug() << "player" << i+1 << "killed";
-                    continue;
+                if(!collision) {
+                    emit newPos(dataPl.m_pl->x(), Y, dataPl.m_pl);
                 }
             }
 
 
-            qreal X =  m_players[i].m_pl->x()
-                      -SPEED_W * bool(m_players[i].m_dir & dir_cast(dir::Left))
-                      +SPEED_W * bool(m_players[i].m_dir & dir_cast(dir::Right));
+            qreal X =  dataPl.m_pl->x()
+                      -SPEED_W * bool(dataPl.m_dir & dir_cast(dir::Left))
+                      +SPEED_W * bool(dataPl.m_dir & dir_cast(dir::Right));
 
             // check possible X
-            if(!qFuzzyCompare(X, m_players[i].m_pl->x()) &&
-                    0 <= X && X <= (m_rectScene.width()  - m_players[i].m_pl->width())) {
+            if(!qFuzzyCompare(X, dataPl.m_pl->x()) &&
+                    0 <= X && X <= (m_rectScene.width() - dataPl.m_pl->width())) {
 
                 // check dir player
-                dir to = (m_players[i].m_pl->x() - X < 0)? dir::Right : dir::Left;
-                if(m_players[i].m_pl->m_dir != to){
-                    emit (this->*m_players[i].signal_newDir)(to);
+                dir to = (dataPl.m_pl->x() - X < 0)? dir::Right : dir::Left;
+                if(dataPl.m_pl->m_dir != to){
+                    emit newDir_Player(to, dataPl.m_pl);
                     continue;
                 }
 
                 // check collision
-                auto list = m_scene->items({X, m_players[i].m_pl->y(), static_cast<qreal>(m_players[i].m_pl->width()),
-                                                                       static_cast<qreal>(m_players[i].m_pl->height())});
-                auto res_check = check_collision(list, m_players[i].m_pl);
+                auto list = m_scene->items({X, dataPl.m_pl->y(), static_cast<qreal>(dataPl.m_pl->width()),
+                                                                 static_cast<qreal>(dataPl.m_pl->height())});
+                bool collision = false;
+                for(auto item : list) {
+                    if(item == dataPl.m_pl || item->type() == static_cast<int>(typeItems::ignoreCollize)) {
+                        continue;
+                    }
+                    else if(item->type() == static_cast<int>(typeItems::bullet)) {
+                        emit newPos(X, dataPl.m_pl->y(), dataPl.m_pl);
+                        emit damage(static_cast<BulletSprite*>(item), dataPl.m_pl);
+                        collision = true;
+                        break;
+                    }
+                }
 
-                // to move
-                if(res_check == 0){
-                    emit (this->*m_players[i].signal_newPos)(X, m_players[i].m_pl->y());
-                    continue;
+                if(!collision) {
+                    emit newPos(X, dataPl.m_pl->y(), dataPl.m_pl);
                 }
-                // move is impossible
-                else if(res_check == 1) {
-                    // nothing
+            }
+        }
+        // TODO: придумать константу
+        std::this_thread::sleep_for(300us);
+
+
+
+        auto collision_bullet = [&](BulletSprite *bullet, qreal x, qreal y){
+            emit newPos(x, y, bullet);
+            if(bullet->isVisible()){
+                for(auto item : m_scene->collidingItems(bullet)) {
+                    if(item == bullet || item->type() == static_cast<int>(typeItems::ignoreCollize)) {
+                        continue;
+                    }
+                    else {
+                        emit damage(bullet, item);
+                    }
                 }
-                // to move and damage
-                else if(res_check == 2) {
-                    emit (this->*m_players[i].signal_newPos)(X, m_players[i].m_pl->y());
-                    emit (this->*m_players[i].signal_damage)();
-                    qDebug() << "player" << i+1 << "killed";
-                    continue;
+            }
+        };
+
+        for(const auto &bullet : m_bulletList) {
+            if(bullet->m_status == BulletSprite::status::fly) {
+                switch (bullet->m_dir) {
+                    case dir::Up:
+                        collision_bullet(bullet, bullet->x(), bullet->y() - SPEED_H_BULLET);
+                        break;
+                    case dir::Down:
+                        collision_bullet(bullet, bullet->x(), bullet->y() + SPEED_H_BULLET);
+                        break;
+                    case dir::Right:
+                        collision_bullet(bullet, bullet->x() + SPEED_W_BULLET, bullet->y());
+                        break;
+                    case dir::Left:
+                        collision_bullet(bullet, bullet->x() - SPEED_W_BULLET, bullet->y());
+                        break;
+                    default:
+                        throw std::logic_error("PlayerController::game() - bullet collision: unaccounted direction");
+                        break;
                 }
             }
         }
 
-
-        // TODO: добавить спрайты выстрелов
-        qDebug() << "numbers of bullet = " << m_bulletList.size();
 
 
         std::this_thread::sleep_for(1000ms/DEL_DELAY);
@@ -262,6 +274,10 @@ void PlayerController::keyEvent(QKeyEvent *event)
                 if(event->modifiers()){
                     m_players[1].m_dir &= ~static_cast<ushort>(dir::Left);
                 }
+                break;
+            case Qt::Key_Space:
+                break;
+            case Qt::Key_0:
                 break;
         default:
             qDebug() << "unreg key: " << event->key();
