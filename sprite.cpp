@@ -14,7 +14,7 @@ Sprite::Sprite(const QVector<QRect> &coords_img, const QImage &img, QSize size)
 
 void Sprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->drawImage(QRect{0, 0, m_size.width(), m_size.height()}, m_imgs[m_currFrame]);
+    painter->drawImage(boundingRect(), m_imgs[m_currFrame]);
 
     Q_UNUSED(option);
     Q_UNUSED(widget);

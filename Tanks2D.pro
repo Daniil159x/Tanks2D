@@ -31,7 +31,8 @@ SOURCES += \
     sprite.cpp \
     mygraphicsscene.cpp \
     playersprite.cpp \
-    playercontroller.cpp
+    playercontroller.cpp \
+    bulletsprite.cpp
 
 HEADERS += \
         widget.h \
@@ -40,7 +41,8 @@ HEADERS += \
     mygraphicsscene.hpp \
     enums.hpp \
     playersprite.hpp \
-    playercontroller.hpp
+    playercontroller.hpp \
+    bulletsprite.hpp
 
 FORMS += \
         widget.ui

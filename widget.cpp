@@ -42,7 +42,7 @@ Widget::Widget(QWidget *parent) :
     auto *ptr_view = new MyGraphicsView(this);
 
     auto *ptr_scene = new MyGraphicsScene(this);
-    ptr_scene->setSceneRect(0, 0, COL*W_SPRITE, ROW*H_SPRITE);
+    ptr_scene->setSceneRect(0, 0, COL*W_SPRITE, ROW*H_SPRITE+100);
 
 
     QImage img("/home/daniil159x/Qt_project/Tanks2D/test_sprite.jpg");
@@ -73,7 +73,7 @@ Widget::Widget(QWidget *parent) :
                                          }, img, {static_cast<int>(W_SPRITE), static_cast<int>(H_SPRITE)});
     ptr_player2->setPos(W_SPRITE*2, H_SPRITE*0.5);
 
-    auto *ptr_playyerContrl = new PlayerController(ptr_player, ptr_player2, ptr_scene);
+    auto *ptr_playyerContrl = new PlayerController(ptr_player, ptr_player2, m_list, ptr_scene);
 
     ptr_playyerContrl->moveToThread(&th);
 
@@ -85,6 +85,36 @@ Widget::Widget(QWidget *parent) :
         ptr_playyerContrl->keyEvent(event);
     });
     connect(ptr_scene, &MyGraphicsScene::sceneRectChanged, ptr_playyerContrl, &PlayerController::rectSceneChanged);
+
+    connect(ptr_playyerContrl, &PlayerController::createBuller, this, [=](qreal x, qreal y, dir d){
+        auto *bullet = new BulletSprite(d, {
+                                            {0, 0, 10, 10},
+                                            {10, 10, 10, 10}
+                                          }, img, {10, 10});
+        switch (d) {
+            case dir::Up:
+                y -= 11;
+                break;
+            case dir::Down:
+                y += 1;
+                break;
+            case dir::Left:
+                x -= 11;
+                break;
+            case dir::Right:
+                x += 1;
+                break;
+        }
+
+
+        bullet->setPos(x, y);
+        connect(bullet, &BulletSprite::destroyed, [&](auto ptr){
+            m_list.removeOne(static_cast<BulletSprite*>(ptr));
+        });
+        m_list += bullet;
+
+        ptr_scene->addItem(bullet);
+    });
 
     ptr_scene->addItem(ptr_player);
     ptr_scene->addItem(ptr_player2);

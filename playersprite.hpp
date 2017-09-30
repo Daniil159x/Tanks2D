@@ -22,9 +22,9 @@ class PlayerController;
 
 class PlayerSprite : /*virtual*/ public QObject, public Sprite
 {
-    friend PlayerController;
-
     Q_OBJECT
+
+    friend PlayerController;
 
 public:
 
@@ -40,6 +40,8 @@ public:
     // sets 'm_currFrame' in accordance with 'dir'
     virtual void nextFrame() override;
 
+    QPointF getMuzzle() const;
+
 protected slots:
     void editPos(qreal x, qreal y);
     void editDir(dir newDir);
@@ -47,8 +49,6 @@ protected slots:
 protected:
     dir m_dir;
 };
-
-
 
 
 #endif // PLAYER_HPP

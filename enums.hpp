@@ -1,11 +1,15 @@
 #ifndef ENUMS_HPP
 #define ENUMS_HPP
 
+#include <QMetaEnum>
+
 enum class typeItems {
     ignoreCollize = 1000,
     breakable,
-    player
+    player,
+    bullet
 };
+
 
 enum class dir {
     No    = 0,
@@ -14,6 +18,8 @@ enum class dir {
     Left  = 1 << 2,
     Right = 1 << 3
 };
+
+Q_DECLARE_METATYPE(dir);
 
 template <typename T = unsigned short>
 T dir_cast(dir d){

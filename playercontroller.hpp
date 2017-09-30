@@ -4,17 +4,23 @@
 #include <QObject>
 #include <QRect>
 #include <QGraphicsScene>
+#include <QGraphicsItemGroup>
 
 #include "enums.hpp"
 #include "playersprite.hpp"
+#include "bulletsprite.hpp"
 
 
 class PlayerController : public QObject
 {
     Q_OBJECT
 
+    using clock = std::chrono::steady_clock;
+    using time_point = clock::time_point;
+
 public:
-    PlayerController(const PlayerSprite *pl_1, const PlayerSprite *pl_2, const QGraphicsScene *scene);
+    PlayerController(const PlayerSprite *pl_1, const PlayerSprite *pl_2, const QList<BulletSprite*> &listBullet,
+                     const QGraphicsScene *scene);
 public slots:
     void game();
     void keyEvent(QKeyEvent *event);
@@ -25,36 +31,33 @@ signals:
     void newPos_forPl_1(qreal x, qreal y);
     void newPos_forPl_2(qreal x, qreal y);
 
+    void newDir_forPl_1(dir d);
+    void newDir_forPl_2(dir d);
+
+    void damage_forPl_1();
+    void damage_forPl_2();
+
+    void createBuller(qreal x, qreal y, dir d);
+
 private:
 
     bool m_game = false;
     // FIXME: что то сделать с выравниванием структуры
     struct data {
         const PlayerSprite *m_pl = nullptr;
-        void (PlayerController::* signal)(qreal, qreal) = nullptr;
+        void (PlayerController::*signal_newPos)(qreal, qreal) = nullptr;
+        void (PlayerController::*signal_newDir)(dir d) = nullptr;
+        void (PlayerController::*signal_damage)() = nullptr;
         ushort m_dir = dir_cast(dir::No);
+        time_point m_timeLastShoot = time_point();
     } m_players[2];
 
     QRectF m_rectScene;
-    const QGraphicsScene *m_scene;
+    const QList<BulletSprite*> &m_bulletList;
+    const QGraphicsScene       *m_scene;
 
 
-    // test_sprite used in possibleMoveTo
-    // for receiving objects in the test point
-    class testSprite : public QGraphicsItem {
-    public:
-        QRectF boundingRect() const {
-            return {0, 0, 1, 1};
-        }
-        void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
-            Q_UNUSED(painter);
-            Q_UNUSED(option);
-            Q_UNUSED(widget);
-        }
-        int type() const {
-            return static_cast<int>(typeItems::ignoreCollize);
-        }
-    } m_testing;
+    void emitCreateBuller(data &dt);
 };
 
 #endif // PLAYERCONTROLLER_HPP

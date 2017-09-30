@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "mygraphicsview.hpp"
+#include "bulletsprite.hpp"
 
 #include <QThread>
 
@@ -23,7 +24,7 @@ signals:
 
 private:
     Ui::Widget *ui;
-
+    QList<BulletSprite*> m_list;
     QThread th;
 };
 

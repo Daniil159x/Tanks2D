@@ -36,6 +36,10 @@ int PlayerSprite::type() const
 
 void PlayerSprite::nextFrame()
 {
+    // FIX: убрать после загрузки спрайтов
+    m_currFrame = 1;
+    return;
+
     switch (m_dir) {
         case dir::No:
             m_currFrame = 0;
@@ -51,6 +55,27 @@ void PlayerSprite::nextFrame()
             break;
         case dir::Right:
             m_currFrame = 4;
+            break;
+        default:
+            throw std::logic_error("PlayerSprite::nextFrame(): unaccounted direction");
+            break;
+    }
+}
+
+QPointF PlayerSprite::getMuzzle() const
+{
+    switch (m_dir) {
+        case dir::Up:
+            return {this->x() + this->width()/2, this->y()};
+            break;
+        case dir::Down:
+            return {this->x() + this->width()/2, this->y() + this->height()};
+            break;
+        case dir::Left:
+            return {this->x(), this->y() + this->height()/2};
+            break;
+        case dir::Right:
+            return {this->x() + this->width(), this->y() + this->height()/2};
             break;
         default:
             throw std::logic_error("PlayerSprite::nextFrame(): unaccounted direction");

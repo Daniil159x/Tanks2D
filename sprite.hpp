@@ -10,6 +10,7 @@ class Sprite : public QGraphicsItem
     using baseClass = QGraphicsItem;
 
 public:
+    // NOTE: можно использовать при отрисовки не массив изображений, а передавать координаты фрейма в картинке
     Sprite(const QVector<QRect> &coords_img, const QImage &img, QSize size);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
