@@ -25,7 +25,7 @@ class BulletSprite : /*virtual*/ public QObject, public Sprite
     friend PlayerController;
 
 public:
-    BulletSprite(dir m_dir, const QVector<QRect> &coords_img, const QImage &img, QSize size);
+    BulletSprite(dir m_dir, const QVector<QImage> &vec_imgs, QSize size);
 
     enum class status {
         fly,

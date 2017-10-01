@@ -3,8 +3,8 @@
 
 #define DELAY_ANIMATION 100/*ms*/
 
-BulletSprite::BulletSprite(dir m_dir, const QVector<QRect> &coords_img, const QImage &img, QSize size)
-    : Sprite (coords_img, img, size), m_dir(m_dir)
+BulletSprite::BulletSprite(dir m_dir, const QVector<QImage> &vec_imgs, QSize size)
+    : Sprite (vec_imgs, size), m_dir(m_dir)
 {
 }
 

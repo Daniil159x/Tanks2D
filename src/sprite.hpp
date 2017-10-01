@@ -11,7 +11,7 @@ class Sprite : public QGraphicsItem
 
 public:
     // NOTE: можно использовать при отрисовки не массив изображений, а передавать координаты фрейма в картинке
-    Sprite(const QVector<QRect> &coords_img, const QImage &img, QSize size);
+    Sprite(const QVector<QImage> &vec_imgs, QSize size, typeItems type = typeItems::ignoreCollize);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
@@ -38,6 +38,7 @@ protected:
     QVector<QImage> m_imgs;
     int             m_currFrame;
     QSize           m_size;
+    typeItems       m_type;
 };
 
 #endif // SPRITE_HPP

@@ -8,8 +8,8 @@
 #include <chrono>
 
 
-PlayerSprite::PlayerSprite(const QVector<QRect> &coords_img, const QImage &img, QSize size)
-    : Sprite(coords_img, img, size), m_dir(dir::Up)
+PlayerSprite::PlayerSprite(const QVector<QImage> &vec_imgs, QSize size)
+    : Sprite(vec_imgs, size), m_dir(dir::Up)
 {
     nextFrame();
 }

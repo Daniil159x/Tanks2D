@@ -1,8 +1,9 @@
 #include "playercontroller.hpp"
+#include "sprite.hpp"
 
 #include <QDebug>
 #include <thread>
-#include "sprite.hpp"
+
 
 using namespace std::chrono_literals;
 
@@ -42,8 +43,6 @@ void PlayerController::game()
 
     m_game = true;
     while (m_game) {
-        bool ctrl = false;
-        auto start = std::chrono::steady_clock::now();
 
         /// players
         for(auto &dataPl : m_players){
@@ -165,22 +164,8 @@ void PlayerController::game()
             }
         }
 
-
-
         std::this_thread::sleep_for(1000ms/DEL_DELAY);
-
-        auto end = std::chrono::steady_clock::now();
-        if(ctrl){
-            qDebug() << std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()  << "n";
-            qDebug() << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << "mk";
-            qDebug() << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "m";
-            qDebug() << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()      << "sec";
-            qDebug() << "----------------------";
-        }
     }
-
-
-    qDebug() << "game loop";
 }
 
 void PlayerController::keyEvent(QKeyEvent *event)

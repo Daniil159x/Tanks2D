@@ -23,26 +23,27 @@ TEMPLATE = app
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-
 SOURCES += \
-        main.cpp \
-        widget.cpp \
-    mygraphicsview.cpp \
-    sprite.cpp \
-    mygraphicsscene.cpp \
-    playersprite.cpp \
-    playercontroller.cpp \
-    bulletsprite.cpp
+            src/main.cpp \
+            src/widget.cpp \
+            src/mygraphicsview.cpp \
+            src/sprite.cpp \
+            src/mygraphicsscene.cpp \
+            src/playersprite.cpp \
+            src/playercontroller.cpp \
+            src/bulletsprite.cpp \
+            src/mapfield.cpp
 
 HEADERS += \
-        widget.h \
-    mygraphicsview.hpp \
-    sprite.hpp \
-    mygraphicsscene.hpp \
-    enums.hpp \
-    playersprite.hpp \
-    playercontroller.hpp \
-    bulletsprite.hpp
+            src/widget.h \
+            src/mygraphicsview.hpp \
+            src/sprite.hpp \
+            src/mygraphicsscene.hpp \
+            src/enums.hpp \
+            src/playersprite.hpp \
+            src/playercontroller.hpp \
+            src/bulletsprite.hpp \
+            src/mapfield.hpp
 
 FORMS += \
-        widget.ui
+            src/widget.ui

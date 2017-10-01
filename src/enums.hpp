@@ -7,7 +7,8 @@ enum class typeItems {
     ignoreCollize = 1000,
     breakable,
     player,
-    bullet
+    bullet,
+    block
 };
 
 

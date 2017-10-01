@@ -2,14 +2,10 @@
 
 #include <QPainter>
 
-Sprite::Sprite(const QVector<QRect> &coords_img, const QImage &img, QSize size)
-    : m_currFrame(0), m_size(size)
+Sprite::Sprite(const QVector<QImage> &vec_imgs, QSize size, typeItems type)
+    : m_imgs(vec_imgs), m_currFrame(0), m_size(size), m_type(type)
 {
     // TODO: добавить ассерты
-    m_imgs.reserve(coords_img.size());
-    for(const auto& coord : coords_img) {
-        m_imgs.push_back( img.copy(coord) );
-    }
 }
 
 void Sprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -27,7 +23,7 @@ QRectF Sprite::boundingRect() const
 
 int Sprite::type() const
 {
-    return static_cast<int>(QGraphicsItem::UserType);
+    return static_cast<int>(m_type);
 }
 
 void Sprite::nextFrame()

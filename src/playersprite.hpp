@@ -28,7 +28,7 @@ class PlayerSprite : /*virtual*/ public QObject, public Sprite
 
 public:
 
-    PlayerSprite(const QVector<QRect> &coords_img, const QImage &img, QSize size);
+    PlayerSprite(const QVector<QImage> &vec_imgs, QSize size);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;

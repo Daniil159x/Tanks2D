@@ -1,7 +1,6 @@
 #include "widget.h"
 #include "ui_widget.h"
 
-#include <mygraphicsscene.hpp>
 #include "mygraphicsview.hpp"
 #include "playersprite.hpp"
 #include "playercontroller.hpp"
@@ -15,7 +14,6 @@
 #include <QResizeEvent>
 #include <QSizePolicy>
 
-#include <sprite.hpp>
 #include <thread>
 
 #include <QTimer>
@@ -35,7 +33,7 @@ Widget::Widget(QWidget *parent) :
 {
     ui->setupUi(this);
     this->resize(COL*W_SPRITE, static_cast<int>(ROW*H_SPRITE));
-
+/*
 
     qDebug() << W_SPRITE << H_SPRITE;
 
@@ -136,7 +134,7 @@ Widget::Widget(QWidget *parent) :
 
     th.start();
 
-    emit startGame();
+    emit startGame(); */
 }
 
 Widget::~Widget()
