@@ -1,32 +1,16 @@
-#include "widget.h"
 #include <QApplication>
 
 #include "enums.hpp"
-#include "mapfield.hpp"
-
-void game();
+#include "mediator.hpp"
 
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<dir>("dir");
 
-    using namespace std::chrono_literals;
     QApplication a(argc, argv);
 
-    MapField mp("/home/daniil159x/Qt_project/Tanks2D/json_test.json");
-    auto vec = mp.getFiledSprites();
+    Mediator game("/home/daniil159x/Qt_project/Tanks2D/maps/test/json_test.json");
+    game.exec();
 
-    return 0;
-}
-
-
-void game() {
-    QGraphicsView  view;
-    QGraphicsScene scene;
-
-    // TODO: сделать нормальное задание пространства
-    scene.setSceneRect(0, 0, 200, 200);
-
-
-
+    return a.exec();
 }

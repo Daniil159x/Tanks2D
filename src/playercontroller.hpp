@@ -23,14 +23,14 @@ public:
                      const QGraphicsScene *scene);
 public slots:
     void game();
-    void keyEvent(QKeyEvent *event);
+    void keyEvent(QKeyEvent event);
     void rectSceneChanged(const QRectF &rect);
     void endGame();
 
 signals:
     void newPos(qreal x, qreal y, QGraphicsItem *ptr);
     void newDir_Player(dir d, PlayerSprite *ptr);
-    void damage(BulletSprite *ptr_out, QGraphicsItem *ptr_in);
+    void damage(BulletSprite *ptr_out, Sprite *ptr_in);
     void createBuller(qreal x, qreal y, dir d);
 
 private:

@@ -25,25 +25,21 @@ TEMPLATE = app
 
 SOURCES += \
             src/main.cpp \
-            src/widget.cpp \
-            src/mygraphicsview.cpp \
             src/sprite.cpp \
-            src/mygraphicsscene.cpp \
             src/playersprite.cpp \
             src/playercontroller.cpp \
             src/bulletsprite.cpp \
-            src/mapfield.cpp
+            src/mapfield.cpp \
+    src/mediator.cpp
 
 HEADERS += \
-            src/widget.h \
-            src/mygraphicsview.hpp \
             src/sprite.hpp \
-            src/mygraphicsscene.hpp \
             src/enums.hpp \
             src/playersprite.hpp \
             src/playercontroller.hpp \
             src/bulletsprite.hpp \
-            src/mapfield.hpp
+            src/mapfield.hpp \
+    src/mediator.hpp
 
-FORMS += \
-            src/widget.ui
+OTHER_FILES += maps/test/*
+

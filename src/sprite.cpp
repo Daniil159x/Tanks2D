@@ -1,6 +1,7 @@
 #include "sprite.hpp"
 
 #include <QPainter>
+#include <QDebug>
 
 Sprite::Sprite(const QVector<QImage> &vec_imgs, QSize size, typeItems type)
     : m_imgs(vec_imgs), m_currFrame(0), m_size(size), m_type(type)
@@ -10,6 +11,7 @@ Sprite::Sprite(const QVector<QImage> &vec_imgs, QSize size, typeItems type)
 
 void Sprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+//    qDebug() << m_imgs.size() << m_currFrame;
     painter->drawImage(boundingRect(), m_imgs[m_currFrame]);
 
     Q_UNUSED(option);
@@ -28,7 +30,14 @@ int Sprite::type() const
 
 void Sprite::nextFrame()
 {
-    m_currFrame = (m_currFrame + 1) % m_imgs.size();
+    // TODO: придумать, что будет, если закончатся все жизни у блока
+
+    // добавить, если не предел
+    m_currFrame = (m_currFrame >= m_imgs.size()) ? m_currFrame : m_currFrame + 1;
+    // посмотреть придел ли, выставить влаги
+    if(m_currFrame == m_imgs.size()) {
+        m_type = typeItems::ignoreCollize;
+    }
 }
 
 bool Sprite::collidesWithItem(const QGraphicsItem *other, Qt::ItemSelectionMode mode) const

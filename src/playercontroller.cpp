@@ -43,7 +43,7 @@ void PlayerController::game()
 
     m_game = true;
     while (m_game) {
-
+//        qDebug() << "loop";
         /// players
         for(auto &dataPl : m_players){
             // NOTE: возможен баг с тем, что игрок получил урон, а снаряд пролетел
@@ -63,8 +63,10 @@ void PlayerController::game()
                 }
 
                 // check collision
+//                qDebug() << "check collision Y calling...";
                 auto list = m_scene->items({dataPl.m_pl->x(), Y, static_cast<qreal>(dataPl.m_pl->width()),
                                                                  static_cast<qreal>(dataPl.m_pl->height())});
+//                qDebug() << "check collision Y called";
                 bool collision = false;
                 for(auto item : list) {
                     if(item == dataPl.m_pl) {
@@ -76,6 +78,10 @@ void PlayerController::game()
                     else if(item->type() == static_cast<int>(typeItems::bullet)) {
                         emit newPos(dataPl.m_pl->x(), Y, dataPl.m_pl);
                         emit damage(static_cast<BulletSprite*>(item), dataPl.m_pl);
+                        collision = true;
+                        break;
+                    }
+                    else {
                         collision = true;
                         break;
                     }
@@ -103,8 +109,10 @@ void PlayerController::game()
                 }
 
                 // check collision
+//                qDebug() << "check collision X calling...";
                 auto list = m_scene->items({X, dataPl.m_pl->y(), static_cast<qreal>(dataPl.m_pl->width()),
                                                                  static_cast<qreal>(dataPl.m_pl->height())});
+//                qDebug() << "check collision X called";
                 bool collision = false;
                 for(auto item : list) {
                     if(item == dataPl.m_pl || item->type() == static_cast<int>(typeItems::ignoreCollize)) {
@@ -116,6 +124,10 @@ void PlayerController::game()
                         collision = true;
                         break;
                     }
+                    else {
+                        collision = true;
+                        break;
+                    }
                 }
 
                 if(!collision) {
@@ -123,12 +135,13 @@ void PlayerController::game()
                 }
             }
         }
+//        qDebug() << "player worked. sleep 300us";
         // TODO: придумать константу
         std::this_thread::sleep_for(300us);
 
 
 
-        auto collision_bullet = [&](BulletSprite *bullet, qreal x, qreal y){
+        static auto collision_bullet = [&](BulletSprite *bullet, qreal x, qreal y){
             emit newPos(x, y, bullet);
             if(bullet->isVisible()){
                 for(auto item : m_scene->collidingItems(bullet)) {
@@ -136,12 +149,15 @@ void PlayerController::game()
                         continue;
                     }
                     else {
-                        emit damage(bullet, item);
+                        // FIX: проверить есть ли тут баг
+                        qDebug() << dynamic_cast<Sprite*>(item);
+                        emit damage(bullet, dynamic_cast<Sprite*>(item));
                     }
                 }
             }
         };
 
+//        qDebug() << "before for: bullet";
         for(const auto &bullet : m_bulletList) {
             if(bullet->m_status == BulletSprite::status::fly) {
                 switch (bullet->m_dir) {
@@ -168,13 +184,14 @@ void PlayerController::game()
     }
 }
 
-void PlayerController::keyEvent(QKeyEvent *event)
+// FIX: копия - это костыль
+void PlayerController::keyEvent(QKeyEvent event)
 {
     qDebug() << "keyEvent";
-    if(event->type() == QEvent::KeyPress) {
+    if(event.type() == QEvent::KeyPress) {
 
         // TODO: Сделать bind кнопок
-        switch (event->key()) {
+        switch (event.key()) {
         // player1
             case Qt::Key_W:
                 m_players[0].m_dir |= dir_cast(dir::Up);
@@ -193,39 +210,39 @@ void PlayerController::keyEvent(QKeyEvent *event)
                 break;
         // player2
             case Qt::Key_8:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir |= dir_cast(dir::Up);
                 }
                 break;
             case Qt::Key_5:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir |= dir_cast(dir::Down);
                 }
                 break;
             case Qt::Key_6:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir |= dir_cast(dir::Right);
                 }
                 break;
             case Qt::Key_4:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir |= dir_cast(dir::Left);
                 }
                 break;
             case Qt::Key_0:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     emitCreateBuller(m_players[1]);
                 }
                 break;
             default:
-                qDebug() << "unreg key: " << event->key();
+                qDebug() << "unreg key: " << event.key();
                 break;
         }
 
 
     }
-    else if(event->type() == QEvent::KeyRelease) {
-        switch (event->key()) {
+    else if(event.type() == QEvent::KeyRelease) {
+        switch (event.key()) {
         // player1
             case Qt::Key_W:
                 m_players[0].m_dir &= ~static_cast<ushort>(dir::Up);
@@ -241,22 +258,22 @@ void PlayerController::keyEvent(QKeyEvent *event)
                 break;
         // player2
             case Qt::Key_8:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir &= ~static_cast<ushort>(dir::Up);
                 }
                 break;
             case Qt::Key_5:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir &= ~static_cast<ushort>(dir::Down);
                 }
                 break;
             case Qt::Key_6:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir &= ~static_cast<ushort>(dir::Right);
                 }
                 break;
             case Qt::Key_4:
-                if(event->modifiers()){
+                if(event.modifiers()){
                     m_players[1].m_dir &= ~static_cast<ushort>(dir::Left);
                 }
                 break;
@@ -265,7 +282,7 @@ void PlayerController::keyEvent(QKeyEvent *event)
             case Qt::Key_0:
                 break;
         default:
-            qDebug() << "unreg key: " << event->key();
+            qDebug() << "unreg key: " << event.key();
             break;
         }
     }

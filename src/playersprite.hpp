@@ -9,6 +9,7 @@
 
 #include "sprite.hpp"
 
+class Mediator;
 class PlayerController;
 
 /*  coords_img:
@@ -24,6 +25,7 @@ class PlayerSprite : /*virtual*/ public QObject, public Sprite
 {
     Q_OBJECT
 
+    friend Mediator;
     friend PlayerController;
 
 public:
@@ -43,7 +45,7 @@ public:
     QPointF getMuzzle() const;
 
 protected slots:
-    void editPos(qreal x, qreal y);
+//    void editPos(qreal x, qreal y);
     void editDir(dir newDir);
 
 protected:

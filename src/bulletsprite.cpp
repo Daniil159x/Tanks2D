@@ -45,6 +45,7 @@ void BulletSprite::editPos(qreal x, qreal y)
 void BulletSprite::collision()
 {
     m_status = status::destroy;
+    m_type   = typeItems::ignoreCollize;
 
     connect(&m_timer, &QTimer::timeout, this, &BulletSprite::nextFrame);
     m_timer.start(DELAY_ANIMATION);

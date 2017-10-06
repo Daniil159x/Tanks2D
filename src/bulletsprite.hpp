@@ -7,6 +7,7 @@
 #include "sprite.hpp"
 
 class PlayerController;
+class Mediator;
 
 
 /* coords_img:
@@ -23,6 +24,7 @@ class BulletSprite : /*virtual*/ public QObject, public Sprite
     Q_OBJECT
 
     friend PlayerController;
+    friend Mediator;
 
 public:
     BulletSprite(dir m_dir, const QVector<QImage> &vec_imgs, QSize size);

@@ -18,6 +18,7 @@ void PlayerSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
 {
     nextFrame();
 
+//    qDebug() << "player:" << m_imgs.size() << m_currFrame;
     painter->drawImage(boundingRect(), m_imgs[m_currFrame]);
 
     Q_UNUSED(option);
@@ -37,8 +38,8 @@ int PlayerSprite::type() const
 void PlayerSprite::nextFrame()
 {
     // FIX: убрать после загрузки спрайтов
-    m_currFrame = 1;
-    return;
+//    m_currFrame = 1;
+//    return;
 
     switch (m_dir) {
         case dir::No:
@@ -47,13 +48,13 @@ void PlayerSprite::nextFrame()
         case dir::Up:
             m_currFrame = 1;
             break;
-        case dir::Down:
+        case dir::Right:
             m_currFrame = 2;
             break;
-        case dir::Left:
+        case dir::Down:
             m_currFrame = 3;
             break;
-        case dir::Right:
+        case dir::Left:
             m_currFrame = 4;
             break;
         default:
@@ -83,11 +84,11 @@ QPointF PlayerSprite::getMuzzle() const
     }
 }
 
-void PlayerSprite::editPos(qreal x, qreal y)
-{
-    qDebug() << "pos edit";
-    this->setPos(x, y);
-}
+//void PlayerSprite::editPos(qreal x, qreal y)
+//{
+//    qDebug() << "pos edit";
+//    this->setPos(x, y);
+//}
 
 void PlayerSprite::editDir(dir newDir)
 {
