@@ -27,12 +27,14 @@ class BulletSprite : /*virtual*/ public QObject, public Sprite
     friend Mediator;
 
 public:
-    BulletSprite(dir m_dir, const QVector<QImage> &vec_imgs, QSize size);
+    BulletSprite(const MapField &map, QSize size, dir dir);
 
     enum class status {
         fly,
         destroy
     };
+
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     virtual int type() const override;
     virtual void nextFrame() override;
@@ -44,11 +46,9 @@ protected slots:
     void collision();
 
 protected:
+
     status m_status;
     dir    m_dir;
-
-private:
-    QTimer m_timer;
 };
 
 #endif // SHELLSPRITE_HPP

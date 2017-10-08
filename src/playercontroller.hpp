@@ -40,7 +40,7 @@ private:
     struct data {
         PlayerSprite *m_pl = nullptr;
         time_point m_timeLastShoot = time_point();
-        ushort m_dir = dir_cast(dir::No);
+        ushort m_keyboardDir = dir_cast(dir::No);
     } m_players[2];
 
     QRectF m_rectScene;
@@ -49,6 +49,12 @@ private:
 
 
     void emitCreateBuller(data &dt);
+
+    // QObject interface
+protected:
+    virtual void timerEvent(QTimerEvent *event) override;
+
+    void movePlayer(data &dataPl);
 };
 
 #endif // PLAYERCONTROLLER_HPP

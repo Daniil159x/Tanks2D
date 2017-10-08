@@ -30,7 +30,7 @@ class PlayerSprite : /*virtual*/ public QObject, public Sprite
 
 public:
 
-    PlayerSprite(const QVector<QImage> &vec_imgs, QSize size);
+    PlayerSprite(const MapField &map, QSize size, QChar sprChar);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
@@ -39,13 +39,11 @@ public:
 
     virtual int type() const override;
 
-    // sets 'm_currFrame' in accordance with 'dir'
     virtual void nextFrame() override;
 
     QPointF getMuzzle() const;
 
 protected slots:
-//    void editPos(qreal x, qreal y);
     void editDir(dir newDir);
 
 protected:

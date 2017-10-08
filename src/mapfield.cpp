@@ -1,320 +1,242 @@
 #include "mapfield.hpp"
 
-#include <QJsonObject>
-#include <QJsonValue>
-#include <QJsonArray>
-#include <QJsonParseError>
-
-#include <QFile>
-
-#include "enums.hpp"
-
-#include <fstream>
+#include "sprite.hpp"
+#include "playersprite.hpp"
 
 #include <QDebug>
 
-MapField::MapField(const QString &fileName) : m_jsonFile(fileName), m_prefixFile(fileName.left(fileName.lastIndexOf('/')+1))
-{
-    QJsonParseError error;
+#include <cassert>
+#include <fstream>
+#include <memory>
 
-    QFile file(m_jsonFile);
-    file.open(QFile::OpenModeFlag::ReadOnly);
-    m_root = QJsonDocument::fromJson(file.readAll(), &error).object();
-    file.close();
+#define PL1 'p'
+#define PL2 'P'
 
-    if(error.error != QJsonParseError::NoError) {
-        throw std::invalid_argument("MapField() - read json error: " + error.errorString().toStdString());
-    }
-
-    this->parseDataField();
-}
-
-QSize MapField::fieldSize() const
-{
-    return m_fieldSize;
-}
-
-typeItems strToType(const QString &str) {
-    if(str == "ignore") {
-        return typeItems::ignoreCollize;
-    }
-    else if(str == "block"){
-        return typeItems::block;
-    }
-    else if(str == "breakable") {
-        return typeItems::breakable;
-    }
-    else if(str == "player") {
-        return typeItems::player;
-    }
-    else {
-        throw std::invalid_argument("strToType() - parse json error: '" + str.toStdString() + "' is uncorrect type");
+int indexOfDir(dir d){
+    switch (d) {
+        case dir::No:    return 0;
+        case dir::Up:    return 1;
+        case dir::Left:  return 4;
+        case dir::Down:  return 3;
+        case dir::Right: return 2;
+        default:
+            throw std::logic_error("indexOfDir: default branch");
     }
 }
 
-std::vector<std::unique_ptr<Sprite> > MapField::getFiledSprites() /*const*/
+//QRect operator * (const QRect& rect, qreal multi) {
+//    return { static_cast<int>(rect.x() * multi),
+//             static_cast<int>(rect.y() * multi),
+//             static_cast<int>(rect.width() * multi),
+//             static_cast<int>(rect.height() * multi) };
+//}
+
+MapField::MapField(const QString &fileName)
 {
-    std::vector<std::unique_ptr<Sprite> > vec_sprites;
-
-    const auto w = m_spriteSize.width();
-    const auto h = m_spriteSize.height();
-
-    for(int i = 0; i < m_field.size(); ++i) {
-        for(int j = 0; j < m_field[i].size(); ++j){
-            QChar sp = m_field[i][j];
-            if(sp == 'p' || sp == 'P') {
-                // TODO: скорее всего костыль, передалать
-                if(sp == 'p'){
-                    m_dataPlayers[0].m_pos = {j, i};
-                }
-                else {
-                    m_dataPlayers[1].m_pos = {j, i};
-                }
-
-                // NOTE: предполагается, что B - это background
-                sp = 'B';
-            }
-
-            if(!m_hashSprites.contains(sp)){
-                std::invalid_argument("getFiledSprites() - unknown sprite");
-            }
-
-            vec_sprites.push_back(std::make_unique<Sprite>(m_hashSprites[sp].m_vecImgs,
-                                                           m_hashSprites[sp].m_size,
-                                                           m_hashSprites[sp].m_type));
-            vec_sprites.back()->setPos(w*j, h*i);
-            qDebug() << i << j;
-        }
-    }
-
-    return vec_sprites;
-}
-
-void MapField::parseDataField()
-{
-    /*
-     * ВАРНИНГ! НЕЧИТАБИЛЬНЫЙ КОД
-     */
-
-    m_nameMap = m_root["NameMap"].toString();
-
-    if(!m_root["sizeSprite"].isArray()) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'size' is not array of Int");
-    }
-
-    auto arr_sizeSprite = m_root["sizeSprite"].toArray();
-
-    if(arr_sizeSprite.size() != 2) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'sizeSprite' is not array of Int");
-    }
-    m_spriteSize = {
-        arr_sizeSprite[0].toInt(-1),
-        arr_sizeSprite[1].toInt(-1)
-    };
-    if(m_spriteSize.width() == -1 || m_spriteSize.height() == -1) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'sizeSprite' is not array of Int)");
-    }
+    Q_UNUSED(fileName);
+    // TODO: сделать кастомизацию
 
 
-    if(!m_root["pathField"].isString()) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'pathField' is not string");
-    }
-
-    m_fileField = m_prefixFile + m_root["pathField"].toString();
-
-    std::ifstream in_file(m_fileField.toStdString());
-    if(!in_file.is_open()) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'pathField' is uncorrect or file is not opened");
-    }
+    std::ifstream in_file("/home/daniil159x/Qt_project/Tanks2D/maps/test/field.txt");
     std::string str;
-
 
     int count_playerField[2] = { 0 };
     std::getline(in_file, str);
     auto len = str.length();
     do {
         if(len != str.length()){
-            throw  std::invalid_argument("parseDataField() - file field is bad");
+            throw  std::invalid_argument("MapField() - file field is bad");
         }
         m_field += QString::fromStdString(str);
 
-        count_playerField[0] += (str.find('p') != std::string::npos);
-        count_playerField[1] += (str.find('P') != std::string::npos);
+        count_playerField[0] += (str.find(PL1) != std::string::npos);
+        count_playerField[1] += (str.find(PL2) != std::string::npos);
 
     } while (std::getline(in_file, str));
-    m_fieldSize = { static_cast<int>(len) * m_spriteSize.width(), m_field.size() * m_spriteSize.height() };
-
-    if(count_playerField[0] != 1 || count_playerField[1] != 1){
-        throw  std::invalid_argument("parseDataField() - file read: player fields uncorrect");
-    }
-
-    if(!m_root["cellName"].isArray()){
-        throw std::invalid_argument("parseDataField() - parse json error: 'cellName' is not array of charecter");
-    }
-
-    // find info about players
-    if(!m_root["cellName"].toArray().contains("P") || !m_root.contains("P")) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'P' not found");
-    }
-    if(!m_root["cellName"].toArray().contains("p") || !m_root.contains("p")) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'p' not found");
-    }
+    m_filedSize = { m_field[0].size() * m_rect.width(), m_field.size() * m_rect.height() };
+    qDebug() << "field size ==" << m_filedSize;
 
 
-    if(!m_root.contains("bullet")) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'bullet' not found");
-    }
-    if(!m_root["bullet"].isArray()) {
-        throw std::invalid_argument("parseDataField() - parse json error: 'bullet' has uncorrect format");
-    }
-    for(const auto &bullet_el : m_root["bullet"].toArray()){
-        QRect rectSprite;
-        if(!bullet_el.isObject()) {
-            throw std::invalid_argument("parseDataField() - 'bullet' has uncorrect format");
-        }
+    // 'B' - background
+    m_hash['B'] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/ground.bmp").copy(0, 0, 32, 32)
+        },
+        typeItems::ignoreCollize
+    };
 
-        const auto &obj = bullet_el.toObject();
 
-        QImage sprite(m_prefixFile + obj["path"].toString());
-        if(sprite.isNull()) {
-            throw std::invalid_argument("parseDataField() - parse json error: in 'bullet' - 'path': can not open file");
-        }
-        if(!obj["pos"].isArray()) {
-            throw std::invalid_argument("parseDataField() - parse json error: in 'bullet' - 'pos' is not array of int");
-        }
-        const auto &arrayArgs = obj["pos"].toArray();
-        if(arrayArgs.size() != 2) {
-            throw std::invalid_argument("parseDataField() - parse json error: in in 'bullet' - 'pos' not contains 2 Int");
-        }
+    // block
+    m_hash['Q'] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block___.bmp").copy(0, 0, 32, 32)
+        },
+        typeItems::block
+    };
 
-        rectSprite = {
-            arrayArgs[0].toInt(-1), arrayArgs[1].toInt(-1),
-            m_spriteSize.width(), m_spriteSize.height()
-        };
-        if(rectSprite.x() == -1 || rectSprite.y() == -1){
-            throw std::invalid_argument("parseDataField() - parse json error: in in 'bullet' - 'pos' not contains 2 Int");
-        }
+    // 'D' - destructible
+    m_hash['D'] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_02.bmp").copy(0, 0, 32, 32),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_02.bmp").copy(32, 0, 32, 32),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_02.bmp").copy(64, 0, 32, 32)
+        },
+        typeItems::breakable
+    };
 
-        m_BulletImages.push_back(sprite.copy(rectSprite));
-    }
+    // 'I' - ....
+    m_hash['I'] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_01.bmp").copy(0, 0, 32, 32),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_01.bmp").copy(32, 0, 32, 32)
+        },
+        typeItems::breakable
+    };
 
-    for(const auto &cellName : m_root["cellName"].toArray()){
-        if(cellName.toString("").size() != 1){
-            throw std::invalid_argument("parseDataField() - parse json error: 'cellName' is not array of charecter");
-        }
+    // 'p' - first player
+    QMatrix mx_90;
+    mx_90.rotate(90);
+    QMatrix mx_180;
+    mx_180.rotate(180);
+    QMatrix mx_270;
+    mx_270.rotate(270);
+    m_hash[PL1] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/noImg.png"),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp"),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp").transformed(mx_90),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp").transformed(mx_180),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp").transformed(mx_270)
+        },
+        typeItems::player
+    };
 
-        if(!m_root[cellName.toString()].isObject()){
-            throw std::invalid_argument("parseDataField() - parse json error: '" + cellName.toString().toStdString()
-                                                                            + "' has uncorrect format");
-        }
+    // 'P' - second player
+    m_hash[PL2] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/noImg.png"),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp"),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp").transformed(mx_90),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp").transformed(mx_180),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp").transformed(mx_270)
+        },
+        typeItems::player
+    };
 
-        const auto &cell = m_root[cellName.toString()].toObject();
-        typeItems cellType = strToType(cell["type"].toString());
+    // 'b' - bullet
+    m_hash['b'] = {
+        {
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/noImg.png"),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png"),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png").transformed(mx_90),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png").transformed(mx_180),
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png").transformed(mx_270)
+        },
+        typeItems::bullet
+    };
 
-        if(!cell["imgs"].isArray()){
-            throw std::invalid_argument("parseDataField() - parse json error: in " + cellName.toString().toStdString()
-                                                                              + " - 'imgs' is not array of object");
-        }
+    m_background = QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/ground.bmp").copy(0, 0, 32, 32);
 
-        QVector<QImage> imgSprites;
-        QRect rectSprite;
-        imgSprites.reserve(cell["imgs"].toArray().size());
-
-        for(const auto & img_obj : cell["imgs"].toArray()) {
-            if(!img_obj.isObject()) {
-                throw std::invalid_argument("parseDataField() - parse json error: in " + cellName.toString().toStdString()
-                                                                                  + " - 'imgs' is not array of object");
-            }
-
-            const auto &obj = img_obj.toObject();
-
-            QImage sprite(m_prefixFile + obj["path"].toString());
-            if(sprite.isNull()) {
-                throw std::invalid_argument("parseDataField() - parse json error: in " + cellName.toString().toStdString()
-                                                                                  + " - 'imgs': can not open file");
-            }
-            if(!obj["pos"].isArray()) {
-                throw std::invalid_argument("parseDataField() - parse json error: in " + cellName.toString().toStdString()
-                                                                                  + " - 'pos' is not array of int");
-            }
-            const auto &arrayArgs = obj["pos"].toArray();
-            if(arrayArgs.size() != 2) {
-                throw std::invalid_argument("parseDataField() - parse json error: in " + cellName.toString().toStdString()
-                                                                                  + " - 'pos' not contains 2 Int");
-            }
-
-            rectSprite = {
-                arrayArgs[0].toInt(-1), arrayArgs[1].toInt(-1),
-                m_spriteSize.width(), m_spriteSize.height()
-            };
-            if(rectSprite.x() == -1 || rectSprite.y() == -1){
-                throw std::invalid_argument("parseDataField() - parse json error: in " + cellName.toString().toStdString()
-                                                                                  + " - 'pos' not contains 2 Int");
-            }
-
-            imgSprites.push_back(sprite.copy(rectSprite));
-        }
-        if(cellName.toString()[0] == 'p'){
-            // TODO: сделать рефакторинг этого куска кода
-            QMatrix mx_rotate;
-            mx_rotate.rotate(90);
-
-            // NO - destroyed
-            imgSprites.push_front(QImage());
-            // right
-            imgSprites.push_back(imgSprites.last().transformed(mx_rotate));
-            // down
-            imgSprites.push_back(imgSprites.last().transformed(mx_rotate));
-            // left
-            imgSprites.push_back(imgSprites.last().transformed(mx_rotate));
-            m_dataPlayers[0].m_data = {std::move(imgSprites), m_spriteSize, cellType};
-        }
-        else if(cellName.toString()[0] == 'P'){
-            QMatrix mx_rotate;
-            mx_rotate.rotate(90);
-            // NO - destroyed
-            imgSprites.push_front(QImage());
-            // right
-            imgSprites.push_back( imgSprites.last().transformed(mx_rotate));
-            // down
-            imgSprites.push_back( imgSprites.last().transformed(mx_rotate));
-            // left
-            imgSprites.push_back( imgSprites.last().transformed(mx_rotate));
-            m_dataPlayers[1].m_data = {std::move(imgSprites), m_spriteSize, cellType};
-        }
-        else {
-            m_hashSprites.insert(cellName.toString()[0], {std::move(imgSprites), m_spriteSize, cellType});
-        }
-    }
 }
 
-QSize MapField::getFieldSize() const
+std::vector<std::unique_ptr<Sprite> > MapField::getFiledSprites() const
 {
-    return m_fieldSize;
+    std::vector<std::unique_ptr<Sprite> > res;
+    res.reserve(static_cast<size_t>(m_field.size()*m_field[0].size()));
+
+    for(int i = 0; i < m_field.size(); ++i){
+        for(int j = 0; j < m_field[i].size(); ++j){
+            std::unique_ptr<Sprite> ptr;
+            if(m_field[i][j] == PL1 || m_field[i][j] == PL2){
+                ptr = std::make_unique<Sprite>(*this, QSize{32, 32}, 'B', m_hash['B'].m_type);
+            }
+            else {
+                ptr = std::make_unique<Sprite>(*this, QSize{32, 32}, m_field[i][j], m_hash[m_field[i][j]].m_type);
+            }
+            ptr->setPos(j*32, i*32);
+            ptr->setZValue(1);
+            res.push_back(std::move(ptr));
+        }
+    }
+    return res;
 }
 
-const QVector<QImage> &MapField::getBulletImages() const
+std::vector<std::unique_ptr<PlayerSprite> > MapField::getPlayerSprites() const
 {
-    return m_BulletImages;
+    std::vector<std::unique_ptr<PlayerSprite> > res;
+    res.reserve(2);
+
+    QPoint pos_pl1, pos_pl2;
+    for(int i = 0; i < m_field.size(); ++i) {
+        int p1 = m_field[i].indexOf(PL1);
+        int p2 = m_field[i].indexOf(PL2);
+
+        if(p1 != -1){
+            pos_pl1 = {p1*32, i*32};
+        }
+        if(p2 != -1){
+            pos_pl2 = {p2*32, i*32};
+        }
+    }
+
+    auto ptr_1 = std::make_unique<PlayerSprite>(*this, QSize{32, 32}, PL1);
+    ptr_1->setPos(pos_pl1);
+    ptr_1->setZValue(5);
+
+    auto ptr_2 = std::make_unique<PlayerSprite>(*this, QSize{32, 32}, PL2);
+    ptr_2->setPos(pos_pl2);
+    ptr_2->setZValue(5);
+
+    res.push_back(std::move(ptr_1));
+    res.push_back(std::move(ptr_2));
+
+    return res;
 }
 
-QString MapField::getNameMap() const
+const QImage& MapField::getImage_forSprite(int i, QChar Spr, const QImage &default_img) const
 {
-    return m_nameMap;
+    assert(m_hash.contains(Spr));
+    return (i < m_hash[Spr].m_vec.size()) ? m_hash[Spr].m_vec[i] : default_img;
 }
 
-std::tuple<std::unique_ptr<PlayerSprite>, std::unique_ptr<PlayerSprite> > MapField::getPlayers() const
+const QImage &MapField::getImage_forPlayer(dir d, QChar Spr) const
 {
-    const auto w = m_spriteSize.width();
-    const auto h = m_spriteSize.height();
+    assert(m_hash.contains(Spr));
+    return m_hash[Spr].m_vec[indexOfDir(d)];
+}
 
-    auto pl1 = std::make_unique<PlayerSprite>(m_dataPlayers[0].m_data.m_vecImgs,
-                                              m_dataPlayers[0].m_data.m_size);
-    pl1->setPos(w*m_dataPlayers[0].m_pos.x(), h*m_dataPlayers[0].m_pos.y());
+const QImage &MapField::getImage_forBullet(dir d) const
+{
+    return m_hash['b'].m_vec[indexOfDir(d)];
+}
 
-    auto pl2 = std::make_unique<PlayerSprite>(m_dataPlayers[1].m_data.m_vecImgs,
-                                              m_dataPlayers[1].m_data.m_size);
-    pl2->setPos(w*m_dataPlayers[1].m_pos.x(), h*m_dataPlayers[1].m_pos.y());
+const QImage &MapField::getImage_forEffect(int i, const QImage &default_img) const
+{
+    return (i < m_effect.size()) ? m_effect[i] : default_img;
+}
 
-    return { std::move(pl1), std::move(pl2) };
+int MapField::getSize_effect() const
+{
+    return m_effect.size();
+}
+
+int MapField::getSize_forSprites(QChar Spr) const
+{
+    assert(m_hash.contains(Spr));
+    return m_hash[Spr].m_vec.size();
+}
+
+QSize MapField::getSize_field() const
+{
+    return m_filedSize;
+}
+
+QSize MapField::getSize_sprites() const
+{
+    return {m_rect.width(), m_rect.height()};
+}
+
+const QImage &MapField::getImage_background() const
+{
+    return MapField::m_background;
 }

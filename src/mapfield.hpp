@@ -7,56 +7,52 @@
 #include <memory>
 #include <vector>
 
-#include "sprite.hpp"
-#include "playersprite.hpp"
+class Sprite;
+class PlayerSprite;
+#include "enums.hpp"
 
 class MapField
 {
 public:
     MapField(const QString &fileName);
 
-    QSize fieldSize() const;
+    std::vector<std::unique_ptr<Sprite>> getFiledSprites() const;
+    std::vector<std::unique_ptr<PlayerSprite>> getPlayerSprites() const;
 
-    std::vector<std::unique_ptr<Sprite> > getFiledSprites() /*const*/ ;
+    const QImage &getImage_forSprite(int i, QChar Spr, const QImage &default_img) const;
 
-    QString getNameMap() const;
+    const QImage &getImage_forPlayer(dir d, QChar Spr) const;
 
-    std::tuple<std::unique_ptr<PlayerSprite>, std::unique_ptr<PlayerSprite>> getPlayers() const;
+    const QImage &getImage_forBullet(dir d) const;
 
-    QSize getFieldSize() const;
+    const QImage &getImage_forEffect(int i, const QImage &default_img) const;
 
-    const QVector<QImage> &getBulletImages() const;
+    int getSize_effect() const;
+
+    int getSize_forSprites(QChar Spr) const;
+
+    QSize getSize_field() const;
+
+
+    QSize getSize_sprites() const;
+
+    const QImage &getImage_background() const;
 
 private:
-    void parseDataField();
+    QImage m_background;
 
-    QString m_jsonFile;
-    QString m_fileField;
-    QString m_prefixFile;
-
-    QString m_nameMap;
 
     QVector<QString> m_field;
+    QRect   m_rect = {0, 0, 32, 32};
+    QSize   m_filedSize;
 
-    QSize  m_spriteSize;
-    QSize  m_fieldSize;
-
-    QJsonObject m_root;
-
-    struct dataSprites {
-        QVector<QImage> m_vecImgs;
-        QSize           m_size;
+    struct dataSprite {
+        QVector<QImage> m_vec;
         typeItems       m_type;
     };
+    QHash<QChar, dataSprite> m_hash;
 
-    QHash<QChar, dataSprites> m_hashSprites;
-
-    struct dataPlayers {
-        QPoint      m_pos = {-1, -1};
-        dataSprites m_data;
-    } m_dataPlayers[2];
-
-    QVector<QImage> m_BulletImages;
+    QVector<QImage> m_effect;
 };
 
 #endif // MAPFIELD_HPP

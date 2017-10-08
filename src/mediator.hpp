@@ -31,7 +31,6 @@ signals:
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) override;
 
-    void updateGame();
 private:
     QGraphicsScene *m_scene;
     QGraphicsView  *m_view;
@@ -43,8 +42,8 @@ private:
 
     MapField m_map;
 
-    QTimer  m_timer;
     QThread m_threadController;
+
 };
 
 #endif // MEDIATOR_HPP

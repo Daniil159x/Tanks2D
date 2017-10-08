@@ -1,11 +1,39 @@
 #include "bulletsprite.hpp"
 
+#include <QPainter>
+#include <QDebug>
 
-#define DELAY_ANIMATION 100/*ms*/
+#include <chrono>
+using namespace std::chrono_literals;
 
-BulletSprite::BulletSprite(dir m_dir, const QVector<QImage> &vec_imgs, QSize size)
-    : Sprite (vec_imgs, size), m_dir(m_dir)
+#define DELAY_ANIMATION 100ms
+
+BulletSprite::BulletSprite(const MapField &map, QSize size, dir dir)
+    : Sprite (map, size, 'b', typeItems::bullet), m_status(status::fly), m_dir(dir)
 {
+}
+
+void BulletSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{    
+
+    static decltype (std::chrono::steady_clock::now()) time = {};
+
+
+    if(m_status == status::fly){
+        painter->drawImage(boundingRect(), m_map.getImage_forBullet(m_dir));
+    }
+    else if(m_status == status::destroy) {
+        auto now = std::chrono::steady_clock::now();
+        if((now - time) > DELAY_ANIMATION){
+            time = now;
+            nextFrame();
+        }
+
+        painter->drawImage(boundingRect(), m_map.getImage_forEffect(m_currFrame, QImage()));
+    }
+
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
 }
 
 int BulletSprite::type() const
@@ -20,8 +48,7 @@ void BulletSprite::nextFrame()
             break;
 
         case status::destroy:
-            if(m_currFrame >= m_imgs.size()){
-                m_timer.stop();
+            if(m_currFrame >= m_map.getSize_effect()){
                 this->deleteLater();
             }
             else {
@@ -46,7 +73,4 @@ void BulletSprite::collision()
 {
     m_status = status::destroy;
     m_type   = typeItems::ignoreCollize;
-
-    connect(&m_timer, &QTimer::timeout, this, &BulletSprite::nextFrame);
-    m_timer.start(DELAY_ANIMATION);
 }

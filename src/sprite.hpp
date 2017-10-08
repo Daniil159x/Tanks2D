@@ -4,14 +4,14 @@
 #include <QGraphicsItem>
 #include <QRect>
 #include "enums.hpp"
+#include "mapfield.hpp"
 
 class Sprite : public QGraphicsItem
 {
     using baseClass = QGraphicsItem;
 
 public:
-    // NOTE: можно использовать при отрисовки не массив изображений, а передавать координаты фрейма в картинке
-    Sprite(const QVector<QImage> &vec_imgs, QSize size, typeItems type = typeItems::ignoreCollize);
+    Sprite(const MapField &map, QSize size, QChar spr, typeItems type = typeItems::ignoreCollize);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
@@ -35,7 +35,8 @@ public:
     virtual bool collidesWithItem(const QGraphicsItem *other, Qt::ItemSelectionMode mode = Qt::IntersectsItemShape) const override;
 
 protected:
-    QVector<QImage> m_imgs;
+    const MapField &m_map;
+    QChar           m_sprChar;
     int             m_currFrame;
     QSize           m_size;
     typeItems       m_type;
