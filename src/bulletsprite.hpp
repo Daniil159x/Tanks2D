@@ -5,6 +5,7 @@
 #include <QTimer>
 
 #include "sprite.hpp"
+#include "enums.hpp"
 
 class PlayerController;
 class Mediator;
@@ -27,7 +28,7 @@ class BulletSprite : /*virtual*/ public QObject, public Sprite
     friend Mediator;
 
 public:
-    BulletSprite(const MapField &map, QSize size, dir dir);
+    BulletSprite(const MapField &map, QSize size);
 
     enum class status {
         fly,
@@ -39,16 +40,15 @@ public:
     virtual int type() const override;
     virtual void nextFrame() override;
 
+    virtual void moveOn(qreal x, qreal y) override;
+
 protected slots:
-    void editPos(qreal x, qreal y);
 
     // class will destroy
     void collision();
 
 protected:
-
     status m_status;
-    dir    m_dir;
 };
 
 #endif // SHELLSPRITE_HPP

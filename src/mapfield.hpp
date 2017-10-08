@@ -21,20 +21,21 @@ public:
 
     const QImage &getImage_forSprite(int i, QChar Spr, const QImage &default_img) const;
 
-    const QImage &getImage_forPlayer(dir d, QChar Spr) const;
+    const QImage &getImage_forPlayer(QChar Spr) const;
 
-    const QImage &getImage_forBullet(dir d) const;
+    const QImage &getImage_forBullet() const;
 
     const QImage &getImage_forEffect(int i, const QImage &default_img) const;
 
     int getSize_effect() const;
 
-    int getSize_forSprites(QChar Spr) const;
+    int getSizeImage_forSprites(QChar Spr) const;
 
     QSize getSize_field() const;
 
-
     QSize getSize_sprites() const;
+
+    QSize getSize_bullet() const;
 
     const QImage &getImage_background() const;
 
@@ -49,6 +50,7 @@ private:
     struct dataSprite {
         QVector<QImage> m_vec;
         typeItems       m_type;
+        QRect           m_rect;
     };
     QHash<QChar, dataSprite> m_hash;
 

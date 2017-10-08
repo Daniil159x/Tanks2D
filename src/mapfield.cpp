@@ -12,17 +12,17 @@
 #define PL1 'p'
 #define PL2 'P'
 
-int indexOfDir(dir d){
-    switch (d) {
-        case dir::No:    return 0;
-        case dir::Up:    return 1;
-        case dir::Left:  return 4;
-        case dir::Down:  return 3;
-        case dir::Right: return 2;
-        default:
-            throw std::logic_error("indexOfDir: default branch");
-    }
-}
+//int indexOfDir(motion_vector d){
+//    switch (d) {
+//        case motion_vector::No:    return 0;
+//        case motion_vector::Up:    return 1;
+//        case motion_vector::Left:  return 4;
+//        case motion_vector::Down:  return 3;
+//        case motion_vector::Right: return 2;
+//        default:
+//            throw std::logic_error("indexOfDir: default branch");
+//    }
+//}
 
 //QRect operator * (const QRect& rect, qreal multi) {
 //    return { static_cast<int>(rect.x() * multi),
@@ -62,7 +62,7 @@ MapField::MapField(const QString &fileName)
         {
             QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/ground.bmp").copy(0, 0, 32, 32)
         },
-        typeItems::ignoreCollize
+        typeItems::ignoreCollize, m_rect
     };
 
 
@@ -71,7 +71,7 @@ MapField::MapField(const QString &fileName)
         {
             QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block___.bmp").copy(0, 0, 32, 32)
         },
-        typeItems::block
+        typeItems::block, m_rect
     };
 
     // 'D' - destructible
@@ -81,7 +81,7 @@ MapField::MapField(const QString &fileName)
             QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_02.bmp").copy(32, 0, 32, 32),
             QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_02.bmp").copy(64, 0, 32, 32)
         },
-        typeItems::breakable
+        typeItems::breakable, m_rect
     };
 
     // 'I' - ....
@@ -90,50 +90,35 @@ MapField::MapField(const QString &fileName)
             QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_01.bmp").copy(0, 0, 32, 32),
             QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/block_01.bmp").copy(32, 0, 32, 32)
         },
-        typeItems::breakable
+        typeItems::breakable, m_rect
     };
 
     // 'p' - first player
-    QMatrix mx_90;
-    mx_90.rotate(90);
-    QMatrix mx_180;
-    mx_180.rotate(180);
-    QMatrix mx_270;
-    mx_270.rotate(270);
     m_hash[PL1] = {
         {
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/noImg.png"),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp"),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp").transformed(mx_90),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp").transformed(mx_180),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.bmp").transformed(mx_270)
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_1.png")
         },
-        typeItems::player
+        typeItems::player, {}
     };
+    m_hash[PL1].m_rect = m_hash[PL1].m_vec.first().rect();
 
     // 'P' - second player
     m_hash[PL2] = {
         {
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/noImg.png"),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp"),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp").transformed(mx_90),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp").transformed(mx_180),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.bmp").transformed(mx_270)
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/player_2.png")
         },
-        typeItems::player
+        typeItems::player, {}
     };
+    m_hash[PL2].m_rect = m_hash[PL2].m_vec.first().rect();
 
     // 'b' - bullet
     m_hash['b'] = {
         {
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/noImg.png"),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png"),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png").transformed(mx_90),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png").transformed(mx_180),
-            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png").transformed(mx_270)
+            QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/bullet02.png")
         },
-        typeItems::bullet
+        typeItems::bullet, {}
     };
+    m_hash['b'].m_rect = m_hash['b'].m_vec.first().rect();
 
     m_background = QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/ground.bmp").copy(0, 0, 32, 32);
 
@@ -147,13 +132,16 @@ std::vector<std::unique_ptr<Sprite> > MapField::getFiledSprites() const
     for(int i = 0; i < m_field.size(); ++i){
         for(int j = 0; j < m_field[i].size(); ++j){
             std::unique_ptr<Sprite> ptr;
+            QChar Spr;
             if(m_field[i][j] == PL1 || m_field[i][j] == PL2){
-                ptr = std::make_unique<Sprite>(*this, QSize{32, 32}, 'B', m_hash['B'].m_type);
+                Spr = 'B';
             }
             else {
-                ptr = std::make_unique<Sprite>(*this, QSize{32, 32}, m_field[i][j], m_hash[m_field[i][j]].m_type);
+                Spr = m_field[i][j];
             }
-            ptr->setPos(j*32, i*32);
+            ptr = std::make_unique<Sprite>(*this, QSize{m_hash[Spr].m_rect.width(), m_hash[Spr].m_rect.height() },
+                                                        Spr, m_hash[Spr].m_type);
+            ptr->setPos(j*m_rect.width(), i*m_rect.height());
             ptr->setZValue(1);
             res.push_back(std::move(ptr));
         }
@@ -179,11 +167,11 @@ std::vector<std::unique_ptr<PlayerSprite> > MapField::getPlayerSprites() const
         }
     }
 
-    auto ptr_1 = std::make_unique<PlayerSprite>(*this, QSize{32, 32}, PL1);
+    auto ptr_1 = std::make_unique<PlayerSprite>(*this, QSize{m_hash[PL1].m_rect.width(), m_hash[PL1].m_rect.height()}, PL1);
     ptr_1->setPos(pos_pl1);
     ptr_1->setZValue(5);
 
-    auto ptr_2 = std::make_unique<PlayerSprite>(*this, QSize{32, 32}, PL2);
+    auto ptr_2 = std::make_unique<PlayerSprite>(*this, QSize{m_hash[PL2].m_rect.width(), m_hash[PL2].m_rect.height()}, PL2);
     ptr_2->setPos(pos_pl2);
     ptr_2->setZValue(5);
 
@@ -199,15 +187,15 @@ const QImage& MapField::getImage_forSprite(int i, QChar Spr, const QImage &defau
     return (i < m_hash[Spr].m_vec.size()) ? m_hash[Spr].m_vec[i] : default_img;
 }
 
-const QImage &MapField::getImage_forPlayer(dir d, QChar Spr) const
+const QImage &MapField::getImage_forPlayer(QChar Spr) const
 {
     assert(m_hash.contains(Spr));
-    return m_hash[Spr].m_vec[indexOfDir(d)];
+    return m_hash[Spr].m_vec[0];
 }
 
-const QImage &MapField::getImage_forBullet(dir d) const
+const QImage &MapField::getImage_forBullet() const
 {
-    return m_hash['b'].m_vec[indexOfDir(d)];
+    return m_hash['b'].m_vec[0];
 }
 
 const QImage &MapField::getImage_forEffect(int i, const QImage &default_img) const
@@ -220,7 +208,7 @@ int MapField::getSize_effect() const
     return m_effect.size();
 }
 
-int MapField::getSize_forSprites(QChar Spr) const
+int MapField::getSizeImage_forSprites(QChar Spr) const
 {
     assert(m_hash.contains(Spr));
     return m_hash[Spr].m_vec.size();
@@ -234,6 +222,11 @@ QSize MapField::getSize_field() const
 QSize MapField::getSize_sprites() const
 {
     return {m_rect.width(), m_rect.height()};
+}
+
+QSize MapField::getSize_bullet() const
+{
+    return {m_hash['b'].m_rect.width(), m_hash['b'].m_rect.height()};
 }
 
 const QImage &MapField::getImage_background() const

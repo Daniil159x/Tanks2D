@@ -8,8 +8,8 @@ using namespace std::chrono_literals;
 
 #define DELAY_ANIMATION 100ms
 
-BulletSprite::BulletSprite(const MapField &map, QSize size, dir dir)
-    : Sprite (map, size, 'b', typeItems::bullet), m_status(status::fly), m_dir(dir)
+BulletSprite::BulletSprite(const MapField &map, QSize size)
+    : Sprite (map, size, 'b', typeItems::bullet), m_status(status::fly)
 {
 }
 
@@ -20,7 +20,7 @@ void BulletSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
 
 
     if(m_status == status::fly){
-        painter->drawImage(boundingRect(), m_map.getImage_forBullet(m_dir));
+        painter->drawImage(boundingRect(), m_map.getImage_forBullet().transformed(m_matrix));
     }
     else if(m_status == status::destroy) {
         auto now = std::chrono::steady_clock::now();
@@ -62,10 +62,10 @@ void BulletSprite::nextFrame()
     }
 }
 
-void BulletSprite::editPos(qreal x, qreal y)
+void BulletSprite::moveOn(qreal x, qreal y)
 {
     if(m_status == status::fly){
-        this->setPos(x, y);
+        Sprite::moveOn(x, y);
     }
 }
 

@@ -43,11 +43,12 @@ public:
 
     QPointF getMuzzle() const;
 
-protected slots:
-    void editDir(dir newDir);
+    virtual void moveOn(qreal x, qreal y) override;
+
+    int getNumber() const;
 
 protected:
-    dir m_dir;
+    int m_number;
 };
 
 

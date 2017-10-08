@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-    qRegisterMetaType<dir>("dir");
+    qRegisterMetaType<motion_vector>("dir");
 
     QApplication a(argc, argv);
 

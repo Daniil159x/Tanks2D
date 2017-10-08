@@ -27,7 +27,6 @@ SOURCES += \
             src/main.cpp \
             src/sprite.cpp \
             src/playersprite.cpp \
-            src/playercontroller.cpp \
             src/bulletsprite.cpp \
             src/mapfield.cpp \
     src/mediator.cpp
@@ -36,7 +35,6 @@ HEADERS += \
             src/sprite.hpp \
             src/enums.hpp \
             src/playersprite.hpp \
-            src/playercontroller.hpp \
             src/bulletsprite.hpp \
             src/mapfield.hpp \
     src/mediator.hpp

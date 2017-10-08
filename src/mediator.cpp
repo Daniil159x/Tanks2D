@@ -1,11 +1,22 @@
 #include "mediator.hpp"
 
 #include "playersprite.hpp"
-#include "playercontroller.hpp"
 
 #include <QDebug>
 
-Mediator::Mediator(const QString &fileName) : m_map(fileName)
+using namespace std::chrono_literals;
+
+#define DEL_DELAY 120
+#define SPEED_W ((0.3 * 120) / DEL_DELAY)
+#define SPEED_H ((0.3 * 120) / DEL_DELAY)
+
+#define SPEED_W_BULLET SPEED_W*2
+#define SPEED_H_BULLET SPEED_H*2
+
+#define SHOT_DELAY 1s
+
+
+Mediator::Mediator(const QString &fileName) : m_isGame(false), m_vectorPlayers{0, 0}, m_shot{false, false}, m_map(fileName)
 {
     m_scene = new QGraphicsScene(0, 0,
                                  static_cast<qreal>(m_map.getSize_field().width()),
@@ -22,97 +33,287 @@ Mediator::Mediator(const QString &fileName) : m_map(fileName)
     m_scene->addItem(m_players[0]);
     m_scene->addItem(m_players[1]);
 
-    m_controller = new PlayerController(m_players[0], m_players[1], m_listBullet, m_scene);
+    m_players[0]->setVector(motion_vector::Up);
+    m_players[1]->setVector(motion_vector::Up);
+
+    qDebug() << static_cast<QGraphicsItem*>(m_players[0]);
+    qDebug() << static_cast<QGraphicsItem*>(m_players[1]);
 
     m_view->setScene(m_scene);
-
-    QTimer::singleShot(100, [&](){
-        m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
-        m_view->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
-        m_view->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
-    });
-
 }
 
 void Mediator::exec()
 {
-
-    // keyboard
     m_view->installEventFilter(this);
-    // FIX: костыль с проброской ивентов, исправить
-//    QObject::connect(this, &Mediator::keyEvent, m_controller, &PlayerController::keyEvent);
 
-    // edit pos
-    QObject::connect(m_controller, &PlayerController::newPos, this, [](qreal x, qreal y, QGraphicsItem *ptr){
-        ptr->setPos(x, y);
+    connect(this, &Mediator::endGame, this, &Mediator::slotEndGame);
+
+    this->m_view->show();
+
+    QTimer::singleShot(100, [=](){
+        m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+        m_view->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
+        m_view->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
+
+        m_isGame = true;
+        m_idTimer =  this->startTimer(1000/60);
+        emit beginGame();
     });
-
-    // edit dir
-    QObject::connect(m_controller, &PlayerController::newDir_Player, this, [](dir d, PlayerSprite *ptr){
-        ptr->editDir(d);
-    });
-
-    // damage
-    QObject::connect(m_controller, &PlayerController::damage, this, [&](BulletSprite *ptr_out, Sprite *ptr_in){
-        ptr_out->collision();
-        // TODO: сделать обработку игроков
-        if(ptr_in->type() != static_cast<int>(typeItems::block)){
-            ptr_in->nextFrame();
-        }
-        this->m_scene->update();
-    });
-
-    // create bullet
-    QObject::connect(m_controller, &PlayerController::createBuller, this, [&](qreal x, qreal y, dir d){
-        auto bullet = new BulletSprite(this->m_map, m_map.getSize_sprites(), d);
-        bullet->setPos(x, y);
-        bullet->setZValue(10);
-        m_listBullet << bullet;
-        QObject::connect(bullet, &BulletSprite::destroyed, this, [&](QObject *ptr){
-            m_listBullet.removeOne(static_cast<BulletSprite*>(ptr));
-        });
-
-        this->m_scene->addItem(bullet);
-        this->m_scene->update();
-        this->m_view->update();
-//        this->m_view->repaint();
-    });
-
-    // end game
-    QObject::connect(this, &Mediator::endGame, m_controller, &PlayerController::endGame);
-
-    // controller to thread
-    QObject::connect(this, &Mediator::beginGame, m_controller, &PlayerController::game);
-    m_controller->moveToThread(&m_threadController);
-    m_threadController.start();
-
-    emit beginGame();
-
-//    m_view->showFullScreen();
-    m_view->show();
 }
 
 Mediator::~Mediator()
 {
-    emit endGame();
-    // FIX: костыль, исправить
-    m_controller->endGame();
-
-    m_threadController.quit();
-    m_threadController.wait();
 
     delete m_view;
-    delete m_controller;
 }
 
 bool Mediator::eventFilter(QObject *obj, QEvent *event)
 {
     Q_UNUSED(obj);
     if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
-//        qDebug() << event;
-//        emit keyEvent(static_cast<QKeyEvent*>(event));
-        m_controller->keyEvent(*static_cast<QKeyEvent*>(event));
+        auto eventKey = static_cast<QKeyEvent*>(event);
+
+        switch (eventKey->key()) {
+        // player[0]
+        case Qt::Key_W:
+            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Up);
+            break;
+        case Qt::Key_S:
+            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Down);
+            break;
+        case Qt::Key_D:
+            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Right);
+            break;
+        case Qt::Key_A:
+            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Left);
+            break;
+        // player[1]
+        case Qt::Key_8:
+            if(eventKey->modifiers()){
+                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Up);
+            }
+            break;
+        case Qt::Key_5:
+            if(eventKey->modifiers()){
+                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Down);
+            }
+            break;
+        case Qt::Key_6:
+            if(eventKey->modifiers()){
+                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Right);
+            }
+            break;
+        case Qt::Key_4:
+            if(eventKey->modifiers()){
+                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Left);
+            }
+            break;
+        // bullet
+        case Qt::Key_Space:
+            m_shot[0] = (event->type() == QEvent::KeyPress);
+            break;
+        case Qt::Key_0:
+            if(eventKey->modifiers()) {
+                m_shot[1] = (event->type() == QEvent::KeyPress);
+            }
+            break;
+        }
+
         return true;
     }
+    else if(event->type() == QEvent::Resize){
+        m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+        return false;
+    }
     return false;
+}
+
+motion_vector getMainVec(int vec){
+    const auto up = motion_vector_cast<int>(motion_vector::Up);
+    const auto down = motion_vector_cast<int>(motion_vector::Down);
+    const auto left = motion_vector_cast<int>(motion_vector::Left);
+    const auto right = motion_vector_cast<int>(motion_vector::Right);
+
+    if(vec & up) {
+        return motion_vector::Up;
+    }
+    else if(vec & down) {
+        return motion_vector::Down;
+    }
+    else if(vec & left) {
+        return motion_vector::Left;
+    }
+    else if(vec & right) {
+        return motion_vector::Right;
+    }
+    else {
+        return motion_vector::No;
+    }
+
+}
+
+#define GAME_IS_CONTINUE { if(!m_isGame) return; }
+
+void Mediator::timerEvent(QTimerEvent *event)
+{
+    Q_UNUSED(event);
+
+//    qDebug() << "---------------";
+//    qDebug() << static_cast<QGraphicsItem*>(m_players[0]);
+//    qDebug() << static_cast<QGraphicsItem*>(m_players[1]);
+//    qDebug() << "---------------";
+
+    for(int i = 0; i < 2; ++i) {
+        GAME_IS_CONTINUE
+
+        movePlayers(i);
+    }
+
+    for(int i = 0; i < 2; ++i) {
+        GAME_IS_CONTINUE
+
+        checkCreateBullet(i);
+    }
+
+    for(auto &bullet : m_listBullet) {
+        GAME_IS_CONTINUE
+
+        moveBullet(bullet);
+        for(auto &el : m_scene->collidingItems(bullet)) {
+            GAME_IS_CONTINUE
+            if(el->type() == static_cast<int>(typeItems::ignoreCollize)) {
+                // nothing
+            }
+            else {
+                auto to = dynamic_cast<Sprite*>(el);
+                if(to == nullptr) {
+                    throw std::logic_error("Mediator::timerEvent: collision item is not inheritor 'Sprite'");
+                }
+                damage(bullet, to);
+            }
+        }
+    }
+
+    m_scene->update();
+    m_view->update();
+}
+
+
+
+void Mediator::movePlayers(int i)
+{
+
+    motion_vector main_vec = getMainVec(m_vectorPlayers[i]);
+
+    if(main_vec != motion_vector::No) {
+        qreal Y = -SPEED_H * bool(main_vec == motion_vector::Up)
+                  +SPEED_H * bool(main_vec == motion_vector::Down);
+        qreal X = -SPEED_W * bool(main_vec == motion_vector::Left)
+                  +SPEED_W * bool(main_vec == motion_vector::Right);
+
+        if(qFuzzyIsNull(Y) && qFuzzyIsNull(X)) {
+            return;
+        }
+
+        m_players[i]->setVector(main_vec);
+        m_players[i]->savePos();
+
+        m_players[i]->moveOn(X, Y);
+
+        for(auto &el : m_scene->collidingItems(m_players[i])) {
+            if(el->type() == static_cast<int>(typeItems::bullet)){
+               damage(static_cast<BulletSprite*>(el), m_players[i]);
+            }
+            else if(el->type() == static_cast<int>(typeItems::ignoreCollize)){
+                continue;
+            }
+            else {
+                qDebug() << "collizion with:" << el->type();
+                m_players[i]->restorePos();
+                break;
+            }
+        }
+    }
+    return;
+}
+
+void Mediator::createBullet(qreal x, qreal y, motion_vector vec)
+{
+    auto bullet = new BulletSprite(m_map, m_map.getSize_bullet());
+    bullet->setPos(x, y);
+    bullet->setVector(vec);
+    bullet->setZValue(10);
+
+    connect(bullet, &BulletSprite::destroyed, this, &Mediator::deleteBullet);
+
+    m_scene->addItem(bullet);
+    m_listBullet.push_back(bullet);
+}
+
+void Mediator::checkCreateBullet(int i)
+{
+    // FIXME: почему снаряд не направляется нормально => неправильно летить
+    auto now = clock::now();
+    if(m_shot[i] && (now - m_lastShot[i]) > SHOT_DELAY) {
+        m_lastShot[i] = now;
+        const auto point = m_players[i]->getMuzzle();
+        qDebug() << "bullet created on " << point;
+        createBullet(point.x(), point.y(), m_players[i]->getVector());
+    }
+}
+
+void Mediator::moveBullet(BulletSprite *ptr)
+{
+    const auto vec = ptr->getVector();
+
+    qreal Y = -SPEED_H_BULLET * bool(vec == motion_vector::Up)
+              +SPEED_H_BULLET * bool(vec == motion_vector::Down);
+    qreal X = -SPEED_W_BULLET * bool(vec == motion_vector::Left)
+              +SPEED_W_BULLET * bool(vec == motion_vector::Right);
+
+    ptr->moveOn(Y, X);
+}
+
+void Mediator::damage(BulletSprite *out, Sprite *to)
+{
+    switch (to->type()) {
+        case static_cast<int>(typeItems::block):
+            out->collision();
+            break;
+        case static_cast<int>(typeItems::breakable):
+            out->collision();
+            to->nextFrame();
+            break;
+        case static_cast<int>(typeItems::bullet):
+            out->collision();
+            static_cast<BulletSprite*>(to)->collision();
+            break;
+        case static_cast<int>(typeItems::player):
+            out->collision();
+            hitPlayer(static_cast<PlayerSprite*>(to));
+            break;
+        default:
+            throw std::logic_error("Mediator::damage: defoult branch");
+    }
+}
+
+void Mediator::hitPlayer(PlayerSprite *ptr)
+{
+    emit endGame(ptr->getNumber());
+}
+
+void Mediator::slotEndGame()
+{
+    m_isGame = false;
+    this->killTimer(m_idTimer);
+}
+
+void Mediator::deleteBullet(QObject *ptr)
+{
+    auto bullet = dynamic_cast<BulletSprite*>(ptr);
+    if(bullet == nullptr) {
+        throw std::logic_error("Mediator::deleteBullet: ptr is not BulletSprite");
+    }
+
+    m_listBullet.removeOne(bullet);
 }
