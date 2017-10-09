@@ -6,31 +6,25 @@
 #include <chrono>
 using namespace std::chrono_literals;
 
-#define DELAY_ANIMATION 100ms
+#define DELAY_ANIMATION 30ms
 
-BulletSprite::BulletSprite(const MapField &map, QSize size)
-    : Sprite (map, size, 'b', typeItems::bullet), m_status(status::fly)
+BulletSprite::BulletSprite(const MapField &map)
+    : Sprite (map, 'b', typeItems::bullet), m_status(status::fly)
 {
 }
 
 void BulletSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {    
-
-    static decltype (std::chrono::steady_clock::now()) time = {};
-
-
-    if(m_status == status::fly){
-        painter->drawImage(boundingRect(), m_map.getImage_forBullet().transformed(m_matrix));
-    }
-    else if(m_status == status::destroy) {
+    // TODO: может перенести этот if в nextFrame()?
+    if(m_status == status::destroy) {
         auto now = std::chrono::steady_clock::now();
-        if((now - time) > DELAY_ANIMATION){
-            time = now;
+        if((now - m_time_lastFrame) > DELAY_ANIMATION){
+            m_time_lastFrame = now;
             nextFrame();
         }
-
-        painter->drawImage(boundingRect(), m_map.getImage_forEffect(m_currFrame, QImage()));
     }
+
+    painter->drawImage(boundingRect(), m_img);
 
     Q_UNUSED(option);
     Q_UNUSED(widget);
@@ -38,7 +32,7 @@ void BulletSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
 
 int BulletSprite::type() const
 {
-    return static_cast<int>(typeItems::bullet);
+    return static_cast<int>(m_type);
 }
 
 void BulletSprite::nextFrame()
@@ -48,11 +42,12 @@ void BulletSprite::nextFrame()
             break;
 
         case status::destroy:
-            if(m_currFrame >= m_map.getSize_effect()){
+            if(m_currIdxFrame >= m_map.getSize_effect()){
                 this->deleteLater();
             }
             else {
-                ++m_currFrame;
+                ++m_currIdxFrame;
+                updateImg();
             }
             break;
 
@@ -73,4 +68,36 @@ void BulletSprite::collision()
 {
     m_status = status::destroy;
     m_type   = typeItems::ignoreCollize;
+
+    const auto w = m_img.width();
+    const auto h = m_img.height();
+    switch (getVector()) {
+        case motion_vector::Up:
+            Sprite::moveOn(-w/2, 0);
+            break;
+        case motion_vector::Down:
+            Sprite::moveOn(-w/2, 0);
+            break;
+        case motion_vector::Left:
+            Sprite::moveOn(0, -h/2);
+            break;
+        case motion_vector::Right:
+            Sprite::moveOn(0, -h/2);
+            break;
+        default:
+            std::logic_error("BulletSprite::collision(): default branch");
+    }
+}
+
+QImage BulletSprite::initImg()
+{
+    if(m_status == status::fly){
+        return m_map.getImage_forBullet();
+    }
+    else if(m_status == status::destroy) {
+        return m_map.getImage_forEffect(m_currIdxFrame, QImage());
+    }
+    else {
+        throw std::logic_error("BulletSprite::initImg: else branch");
+    }
 }

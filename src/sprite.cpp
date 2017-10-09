@@ -3,16 +3,16 @@
 #include <QPainter>
 #include <QDebug>
 
-Sprite::Sprite(const MapField &map, QSize size, QChar spr, const typeItems type)
-    : m_map(map), m_sprChar(spr), m_currFrame(0), m_size(size), m_type(type), m_currRotate(0)
+Sprite::Sprite(const MapField &map, QChar spr, const typeItems type)
+    : m_map(map), m_sprChar(spr), m_currIdxFrame(0),m_type(type),
+        m_currRotate(0), m_img(initImg())
 {
     // TODO: добавить ассерты
 }
 
 void Sprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->drawImage(boundingRect(),
-        m_map.getImage_forSprite(m_currFrame, m_sprChar, m_map.getImage_background()).transformed(m_matrix));
+    painter->drawImage(boundingRect(), m_img);
 
     Q_UNUSED(option);
     Q_UNUSED(widget);
@@ -20,7 +20,7 @@ void Sprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QW
 
 QRectF Sprite::boundingRect() const
 {
-    return {0, 0, static_cast<qreal>(m_size.width()), static_cast<qreal>(m_size.height())};
+    return m_img.rect();
 }
 
 int Sprite::type() const
@@ -30,11 +30,12 @@ int Sprite::type() const
 
 void Sprite::nextFrame()
 {
-    m_currFrame = (m_currFrame >= m_map.getSizeImage_forSprites(m_sprChar)) ? m_currFrame : m_currFrame + 1;
+    m_currIdxFrame = (m_currIdxFrame >= m_map.getSizeImage_forSprites(m_sprChar)) ? m_currIdxFrame : m_currIdxFrame + 1;
 
-    if(m_currFrame == m_map.getSizeImage_forSprites(m_sprChar)) {
+    if(m_currIdxFrame == m_map.getSizeImage_forSprites(m_sprChar)) {
         m_type = typeItems::ignoreCollize;
     }
+    updateImg();
 }
 
 qreal angleFromVector(motion_vector v){
@@ -56,9 +57,9 @@ void Sprite::setVector(motion_vector v)
 {
     auto newRotate = angleFromVector(v);
     if(!qFuzzyCompare(m_currRotate, newRotate)){
-        m_matrix.reset();
-        m_matrix.rotate(angleFromVector(v));
         m_currRotate = newRotate;
+
+        updateImg();
     }
 }
 
@@ -86,6 +87,7 @@ motion_vector Sprite::getVector() const
     }
 }
 
+// NOTE: moveOn == moveBy?
 void Sprite::moveOn(qreal x, qreal y)
 {
     this->setPos(mapToScene(x, y));
@@ -109,4 +111,19 @@ void Sprite::savePos()
 void Sprite::restorePos()
 {
     this->setPos(m_save_pos.x(), m_save_pos.y());
+}
+
+// NOTE: может возвращать const QImage& ?
+QImage Sprite::initImg()
+{
+    return m_map.getImage_forSprite(m_currIdxFrame, m_sprChar, m_map.getImage_background());
+}
+
+// NOTE: костыль ли?
+void Sprite::updateImg()
+{
+    QMatrix mx;
+    mx.rotate(m_currRotate);
+
+    m_img = initImg().transformed(mx);
 }

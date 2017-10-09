@@ -12,7 +12,7 @@ class Sprite : public QGraphicsItem
 
 public:
 
-    Sprite(const MapField &map, QSize size, QChar spr, const typeItems type = typeItems::ignoreCollize);
+    Sprite(const MapField &map, QChar spr, const typeItems type = typeItems::ignoreCollize);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
@@ -24,16 +24,16 @@ public:
     virtual void nextFrame();
 
     QSize getSize() const {
-        return m_size;
+        return m_img.size();
     }
     int width() const {
-        return m_size.width();
+        return getSize().width();
     }
     int height() const {
-        return m_size.height();
+        return getSize().height();
     }
 
-    void setVector(motion_vector v);
+    virtual void setVector(motion_vector v);
     motion_vector getVector() const;
 
     virtual void moveOn(qreal x, qreal y);
@@ -46,14 +46,19 @@ public:
 protected:
     const MapField &m_map;
     QChar           m_sprChar;
-    int             m_currFrame;
-    QSize           m_size;
+    int             m_currIdxFrame;
+//    QSize           m_size;
     typeItems       m_type;
 
-    QMatrix         m_matrix;
     qreal           m_currRotate;
 
     QPointF m_save_pos;
+    QImage  m_img;
+
+    // m_img = getImage_for<class>(...);
+    virtual QImage initImg();
+
+    void updateImg();
 
 };
 

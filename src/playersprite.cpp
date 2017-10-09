@@ -8,26 +8,27 @@
 #include <chrono>
 
 
-PlayerSprite::PlayerSprite(const MapField &map, QSize size, QChar sprChar)
-    : Sprite(map, size, sprChar, typeItems::player)
+PlayerSprite::PlayerSprite(const MapField &map, QChar sprChar)
+    : Sprite(map, sprChar, typeItems::player)
 {
     static int n = 0;
 
+    // TODO: костыль с присваением порядковых номеров игрокам
     m_number = ++n;
 }
 
 void PlayerSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->drawImage(boundingRect(), m_map.getImage_forPlayer(m_sprChar).transformed(m_matrix));
+    painter->drawImage(boundingRect(), m_img);
 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 }
 
-QRectF PlayerSprite::boundingRect() const
-{
-    return {0, 0, static_cast<qreal>(m_size.width()), static_cast<qreal>(m_size.height())};
-}
+//QRectF PlayerSprite::boundingRect() const
+//{
+//    return m_img.rect();
+//}
 
 int PlayerSprite::type() const
 {
@@ -49,13 +50,13 @@ QPointF PlayerSprite::getMuzzle() const
 
     switch (getVector()) {
         case motion_vector::Up:
-            return {x + w / 2 - offset, y};
+            return {x + w / 2 - offset, y - h};
         case motion_vector::Right:
             return {x + w, y + h / 2 - offset};
         case motion_vector::Down:
-            return {x + w / 2 - offset, y + h};
+            return {x + w / 2 - offset, y + h + 2};
         case motion_vector::Left:
-            return {x, y + h / 2 - offset};
+            return {x - w, y + h / 2 - offset};
         default:
             return {x + w / 2 - offset, y};
     }
@@ -70,5 +71,10 @@ void PlayerSprite::moveOn(qreal x, qreal y)
 int PlayerSprite::getNumber() const
 {
     return m_number;
+}
+
+QImage PlayerSprite::initImg()
+{
+    return m_map.getImage_forPlayer(m_sprChar);
 }
 

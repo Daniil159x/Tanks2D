@@ -120,6 +120,12 @@ MapField::MapField(const QString &fileName)
     };
     m_hash['b'].m_rect = m_hash['b'].m_vec.first().rect();
 
+
+    // effect
+    for(int i = 0; i < 15; ++i){
+        m_effect.push_back(QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/sprite_sheet.png").copy(20*i, 0, 20, 20));
+    }
+
     m_background = QImage("/home/daniil159x/Qt_project/Tanks2D/maps/test/ground.bmp").copy(0, 0, 32, 32);
 
 }
@@ -139,8 +145,7 @@ std::vector<std::unique_ptr<Sprite> > MapField::getFiledSprites() const
             else {
                 Spr = m_field[i][j];
             }
-            ptr = std::make_unique<Sprite>(*this, QSize{m_hash[Spr].m_rect.width(), m_hash[Spr].m_rect.height() },
-                                                        Spr, m_hash[Spr].m_type);
+            ptr = std::make_unique<Sprite>(*this, Spr, m_hash[Spr].m_type);
             ptr->setPos(j*m_rect.width(), i*m_rect.height());
             ptr->setZValue(1);
             res.push_back(std::move(ptr));
@@ -167,11 +172,11 @@ std::vector<std::unique_ptr<PlayerSprite> > MapField::getPlayerSprites() const
         }
     }
 
-    auto ptr_1 = std::make_unique<PlayerSprite>(*this, QSize{m_hash[PL1].m_rect.width(), m_hash[PL1].m_rect.height()}, PL1);
+    auto ptr_1 = std::make_unique<PlayerSprite>(*this, PL1);
     ptr_1->setPos(pos_pl1);
     ptr_1->setZValue(5);
 
-    auto ptr_2 = std::make_unique<PlayerSprite>(*this, QSize{m_hash[PL2].m_rect.width(), m_hash[PL2].m_rect.height()}, PL2);
+    auto ptr_2 = std::make_unique<PlayerSprite>(*this, PL2);
     ptr_2->setPos(pos_pl2);
     ptr_2->setZValue(5);
 

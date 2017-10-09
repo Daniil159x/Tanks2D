@@ -7,7 +7,6 @@
 #include "sprite.hpp"
 #include "enums.hpp"
 
-class PlayerController;
 class Mediator;
 
 
@@ -24,11 +23,10 @@ class BulletSprite : /*virtual*/ public QObject, public Sprite
 {
     Q_OBJECT
 
-    friend PlayerController;
     friend Mediator;
 
 public:
-    BulletSprite(const MapField &map, QSize size);
+    BulletSprite(const MapField &map);
 
     enum class status {
         fly,
@@ -42,6 +40,10 @@ public:
 
     virtual void moveOn(qreal x, qreal y) override;
 
+    bool isFly() const {
+        return (m_status == status::fly);
+    }
+
 protected slots:
 
     // class will destroy
@@ -49,6 +51,10 @@ protected slots:
 
 protected:
     status m_status;
+
+    decltype (std::chrono::steady_clock::now()) m_time_lastFrame = {};
+
+    virtual QImage initImg() override;
 };
 
 #endif // SHELLSPRITE_HPP

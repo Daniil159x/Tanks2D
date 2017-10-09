@@ -48,7 +48,8 @@ void Mediator::exec()
 
     connect(this, &Mediator::endGame, this, &Mediator::slotEndGame);
 
-    this->m_view->show();
+//    this->m_view->show();
+    this->m_view->showFullScreen();
 
     QTimer::singleShot(100, [=](){
         m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
@@ -158,11 +159,6 @@ void Mediator::timerEvent(QTimerEvent *event)
 {
     Q_UNUSED(event);
 
-//    qDebug() << "---------------";
-//    qDebug() << static_cast<QGraphicsItem*>(m_players[0]);
-//    qDebug() << static_cast<QGraphicsItem*>(m_players[1]);
-//    qDebug() << "---------------";
-
     for(int i = 0; i < 2; ++i) {
         GAME_IS_CONTINUE
 
@@ -177,6 +173,10 @@ void Mediator::timerEvent(QTimerEvent *event)
 
     for(auto &bullet : m_listBullet) {
         GAME_IS_CONTINUE
+
+        if(!bullet->isFly()){
+            continue;
+        }
 
         moveBullet(bullet);
         for(auto &el : m_scene->collidingItems(bullet)) {
@@ -239,7 +239,7 @@ void Mediator::movePlayers(int i)
 
 void Mediator::createBullet(qreal x, qreal y, motion_vector vec)
 {
-    auto bullet = new BulletSprite(m_map, m_map.getSize_bullet());
+    auto bullet = new BulletSprite(m_map);
     bullet->setPos(x, y);
     bullet->setVector(vec);
     bullet->setZValue(10);
@@ -252,7 +252,6 @@ void Mediator::createBullet(qreal x, qreal y, motion_vector vec)
 
 void Mediator::checkCreateBullet(int i)
 {
-    // FIXME: почему снаряд не направляется нормально => неправильно летить
     auto now = clock::now();
     if(m_shot[i] && (now - m_lastShot[i]) > SHOT_DELAY) {
         m_lastShot[i] = now;
@@ -271,7 +270,7 @@ void Mediator::moveBullet(BulletSprite *ptr)
     qreal X = -SPEED_W_BULLET * bool(vec == motion_vector::Left)
               +SPEED_W_BULLET * bool(vec == motion_vector::Right);
 
-    ptr->moveOn(Y, X);
+    ptr->moveOn(X, Y);
 }
 
 void Mediator::damage(BulletSprite *out, Sprite *to)
@@ -310,10 +309,10 @@ void Mediator::slotEndGame()
 
 void Mediator::deleteBullet(QObject *ptr)
 {
-    auto bullet = dynamic_cast<BulletSprite*>(ptr);
-    if(bullet == nullptr) {
-        throw std::logic_error("Mediator::deleteBullet: ptr is not BulletSprite");
-    }
+    // WARNING: возможен баг, но адреса совпадают
+    auto bullet = static_cast<BulletSprite*>(ptr);
 
-    m_listBullet.removeOne(bullet);
+    if(!m_listBullet.removeOne(bullet)) {
+        throw std::logic_error("Mediator::deleteBullet: m_listBullet is not contains ptr");
+    }
 }

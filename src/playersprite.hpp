@@ -10,7 +10,6 @@
 #include "sprite.hpp"
 
 class Mediator;
-class PlayerController;
 
 /*  coords_img:
  *
@@ -26,16 +25,15 @@ class PlayerSprite : /*virtual*/ public QObject, public Sprite
     Q_OBJECT
 
     friend Mediator;
-    friend PlayerController;
 
 public:
 
-    PlayerSprite(const MapField &map, QSize size, QChar sprChar);
+    PlayerSprite(const MapField &map, QChar sprChar);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
 
-    virtual QRectF boundingRect() const override;
+//    virtual QRectF boundingRect() const override;
 
     virtual int type() const override;
 
@@ -49,6 +47,8 @@ public:
 
 protected:
     int m_number;
+
+    virtual QImage initImg() override;
 };
 
 
