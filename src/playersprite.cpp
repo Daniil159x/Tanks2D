@@ -9,7 +9,7 @@
 
 
 PlayerSprite::PlayerSprite(const MapField &map, QChar sprChar)
-    : Sprite(map, sprChar, typeItems::player)
+    : Sprite(map, sprChar, typeItems::player), m_isLive(true)
 {
     static int n = 0;
 
@@ -19,16 +19,24 @@ PlayerSprite::PlayerSprite(const MapField &map, QChar sprChar)
 
 void PlayerSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+#ifdef DEBUG_SPRITE
+    {
+        auto r = mapFromScene(this->x(), this->y());
+        painter->fillRect(static_cast<int>(r.x()), static_cast<int>(r.y()),
+                          this->width(), this->height(), Qt::green);
+    }
+#endif
+
     painter->drawImage(boundingRect(), m_img);
 
     Q_UNUSED(option);
     Q_UNUSED(widget);
 }
 
-//QRectF PlayerSprite::boundingRect() const
-//{
-//    return m_img.rect();
-//}
+QRectF PlayerSprite::boundingRect() const
+{
+    return m_img.rect();
+}
 
 int PlayerSprite::type() const
 {
@@ -71,6 +79,16 @@ void PlayerSprite::moveOn(qreal x, qreal y)
 int PlayerSprite::getNumber() const
 {
     return m_number;
+}
+
+bool PlayerSprite::getIsLive() const
+{
+    return m_isLive;
+}
+
+void PlayerSprite::setIsLive(bool isLive)
+{
+    m_isLive = isLive;
 }
 
 QImage PlayerSprite::initImg()

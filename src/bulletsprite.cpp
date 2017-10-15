@@ -3,13 +3,11 @@
 #include <QPainter>
 #include <QDebug>
 
-#include <chrono>
 using namespace std::chrono_literals;
 
-#define DELAY_ANIMATION 30ms
 
-BulletSprite::BulletSprite(const MapField &map)
-    : Sprite (map, 'b', typeItems::bullet), m_status(status::fly)
+BulletSprite::BulletSprite(const MapField &map, std::chrono::steady_clock::duration delay)
+    : Sprite (map, 'b', typeItems::bullet), m_status(status::fly), m_delayAnimation(delay)
 {
 }
 
@@ -18,11 +16,19 @@ void BulletSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *opti
     // TODO: может перенести этот if в nextFrame()?
     if(m_status == status::destroy) {
         auto now = std::chrono::steady_clock::now();
-        if((now - m_time_lastFrame) > DELAY_ANIMATION){
+        if((now - m_time_lastFrame) > m_delayAnimation){
             m_time_lastFrame = now;
             nextFrame();
         }
     }
+
+#ifdef DEBUG_SPRITE
+    {
+        auto r = mapFromScene(this->x(), this->y());
+        painter->fillRect(static_cast<int>(r.x()), static_cast<int>(r.y()),
+                          this->width(), this->height(), Qt::red);
+    }
+#endif
 
     painter->drawImage(boundingRect(), m_img);
 
@@ -67,8 +73,10 @@ void BulletSprite::moveOn(qreal x, qreal y)
 void BulletSprite::collision()
 {
     m_status = status::destroy;
-    m_type   = typeItems::ignoreCollize;
+    m_type   = typeItems::ignoreCollision;
 
+
+    // TODO: сделать выравнивание в nextFrame, а лучше в updateImg. Ибо могут прийти разный размеры эффектов
     const auto w = m_img.width();
     const auto h = m_img.height();
     switch (getVector()) {
@@ -88,6 +96,7 @@ void BulletSprite::collision()
             std::logic_error("BulletSprite::collision(): default branch");
     }
 }
+
 
 QImage BulletSprite::initImg()
 {

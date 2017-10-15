@@ -33,7 +33,7 @@ public:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
 
-//    virtual QRectF boundingRect() const override;
+    virtual QRectF boundingRect()const override;
 
     virtual int type() const override;
 
@@ -45,8 +45,12 @@ public:
 
     int getNumber() const;
 
+    bool getIsLive() const;
+    void setIsLive(bool isLive);
+
 protected:
     int m_number;
+    bool m_isLive;
 
     virtual QImage initImg() override;
 };

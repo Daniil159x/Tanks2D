@@ -1,0 +1,78 @@
+{
+    "NameMap"     : "Classic",
+    "file_field"  : "etc/field.txt",
+    "size_sprites": [32, 32],
+    "cellName"  : "BIDPpbQ",
+    "Q" : {
+        "type" : "block",
+        "imgs" : [
+                    { "path": "blocks/1_b.png", "pos": [0, 0] }
+                 ]
+    },
+
+    "D" : {
+        "type" : "breakable",
+        "imgs" : [
+                    { "path": "blocks/2_d2.png", "pos": [0, 0] },
+                    { "path": "blocks/2_d2.png", "pos": [32, 0] }
+                 ]
+    },
+    "I" : {
+        "type" : "breakable",
+        "imgs" : [
+                    { "path": "blocks/3_d3.png", "pos": [0, 0] },
+                    { "path": "blocks/3_d3.png", "pos": [32, 0] },
+                    { "path": "blocks/3_d3.png", "pos": [64, 0] }
+                 ]
+    },
+    "B" : {
+        "type" : "background",
+        "imgs" : [
+                    { "path": "etc/ground.png", "pos": [0, 0] }
+                 ]
+    },
+    "p" : {
+        "type" : "player",
+        "imgs" : [
+                    { "path": "players/1.png", "pos": [0, 0] }
+                 ],
+        "size" : [27, 29]
+    },
+    "P" : {
+        "type" : "player",
+        "imgs" : [
+                    { "path": "players/2.png", "pos": [0, 0] }
+                 ],
+        "size" : [27, 28]
+    },
+    "b": {
+        "type" : "bullet",
+        "imgs" : [
+                    { "path": "etc/bullet.png", "pos": [0, 0] }
+                 ],
+        "size" : [6, 23]
+    },
+
+    "player_1"   : "p",
+    "player_2"   : "P",
+    "background" : "B",
+    "bullet"     : "b",
+    
+    "effects" : [
+                    { "path": "effects/1_15.png", "rect": [0,   0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [20,  0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [40,  0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [60,  0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [80,  0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [100, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [120, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [140, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [160, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [180, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [200, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [220, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [240, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [260, 0, 20, 20] },
+                    { "path": "effects/1_15.png", "rect": [280, 0, 20, 20] }
+                ]
+}

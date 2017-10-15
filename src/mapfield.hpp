@@ -19,9 +19,9 @@ public:
     std::vector<std::unique_ptr<Sprite>> getFiledSprites() const;
     std::vector<std::unique_ptr<PlayerSprite>> getPlayerSprites() const;
 
-    const QImage &getImage_forSprite(int i, QChar Spr, const QImage &default_img) const;
+    const QImage &getImage_forSprite(int i, QChar cellName, const QImage &default_img) const;
 
-    const QImage &getImage_forPlayer(QChar Spr) const;
+    const QImage &getImage_forPlayer(QChar cellName) const;
 
     const QImage &getImage_forBullet() const;
 
@@ -29,7 +29,7 @@ public:
 
     int getSize_effect() const;
 
-    int getSizeImage_forSprites(QChar Spr) const;
+    int getSizeImage_forSprites(QChar cellName) const;
 
     QSize getSize_field() const;
 
@@ -39,12 +39,23 @@ public:
 
     const QImage &getImage_background() const;
 
+    // FIXME: сделать ревизию кода, и заменить захардженые значения cell'ов
+    QChar getPl1CellName() const;
+
+    QChar getPl2CellName() const;
+
+    QChar getBackgroundCellName() const;
+
+    QChar getBulletCellName() const;
+
 private:
+    QChar m_pl1_CellName, m_pl2_CellName, m_backgroundCellName, m_bulletCellName;
     QImage m_background;
 
+    QString m_prefix;
 
     QVector<QString> m_field;
-    QRect   m_rect = {0, 0, 32, 32};
+    QRect   m_rect; // = {0, 0, 32, 32};
     QSize   m_filedSize;
 
     struct dataSprite {
@@ -55,6 +66,14 @@ private:
     QHash<QChar, dataSprite> m_hash;
 
     QVector<QImage> m_effect;
+
+    QJsonObject m_root;
+
+
+    void loadField();
+    void loadRectSprites();
+    QString getStringOfCellSprite() const;
+    void loadCellSprite(QChar ch);
 };
 
 #endif // MAPFIELD_HPP

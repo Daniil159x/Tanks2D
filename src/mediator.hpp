@@ -21,13 +21,32 @@ class Mediator : public QObject
 
     using clock = std::chrono::steady_clock;
     using time_poing = clock::time_point;
+    using duration = clock::duration;
 
 public:
     explicit Mediator(const QString &fileName);
 
-    void exec();
+    void exec(bool fullScrean = true);
 
     virtual ~Mediator();
+
+
+    // TODO: заменить на генераторы
+    qreal getSpeedW() const;
+    void setSpeedW(const qreal &getSpeedW);
+
+    qreal getSpeedH() const;
+    void setSpeedH(const qreal &speedH);
+
+    qreal getBulletSpeedW() const;
+    void setBulletSpeedW(const qreal &bulletSpeedW);
+
+    qreal getBulletSpeedH() const;
+    void setBulletSpeedH(const qreal &bulletSpeedH);
+
+    duration getShotDelay() const;
+    void setShotDelay(const duration &shotDelay);
+
 signals:
     void keyEvent(QKeyEvent *ev);
     void endGame(int player);
@@ -42,6 +61,10 @@ private:
 
     bool m_isGame;
 
+    qreal m_speedW, m_speedH;
+    qreal m_bulletSpeedW, m_bulletSpeedH;
+    duration m_shotDelay;
+
     PlayerSprite *m_players[2];
     int           m_vectorPlayers[2];
     bool          m_shot[2];
@@ -52,10 +75,8 @@ private:
 
     QList<BulletSprite*> m_listBullet;
 
-
-//    QList<BulletSprite*> m_listBullet;
-
     MapField m_map;
+
 
     void movePlayers(int i);
     void createBullet(qreal x, qreal y, motion_vector vec);

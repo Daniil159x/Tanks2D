@@ -7,17 +7,10 @@
 #include "sprite.hpp"
 #include "enums.hpp"
 
+#include <chrono>
+
 class Mediator;
 
-
-/* coords_img:
- * coords_img[0] = fly
- * coords_img[1] = destroy, frame 1
- * coords_img[2] = destroy, frame 2
- * ...
- * coords_img[n] = destroy, frame n
- *
- */
 
 class BulletSprite : /*virtual*/ public QObject, public Sprite
 {
@@ -26,7 +19,7 @@ class BulletSprite : /*virtual*/ public QObject, public Sprite
     friend Mediator;
 
 public:
-    BulletSprite(const MapField &map);
+    BulletSprite(const MapField &map, std::chrono::steady_clock::duration delay);
 
     enum class status {
         fly,
@@ -51,6 +44,8 @@ protected slots:
 
 protected:
     status m_status;
+
+    std::chrono::steady_clock::duration m_delayAnimation;
 
     decltype (std::chrono::steady_clock::now()) m_time_lastFrame = {};
 

@@ -6,17 +6,12 @@
 
 using namespace std::chrono_literals;
 
-#define DEL_DELAY 120
-#define SPEED_W ((0.3 * 120) / DEL_DELAY)
-#define SPEED_H ((0.3 * 120) / DEL_DELAY)
+#define FPS 100
+#define DELAY_ANIMATION 40ms
 
-#define SPEED_W_BULLET SPEED_W*2
-#define SPEED_H_BULLET SPEED_H*2
-
-#define SHOT_DELAY 1s
-
-
-Mediator::Mediator(const QString &fileName) : m_isGame(false), m_vectorPlayers{0, 0}, m_shot{false, false}, m_map(fileName)
+Mediator::Mediator(const QString &fileName) : m_isGame(false), m_speedW((0.3 * FPS) / 60),
+    m_speedH((0.3 * FPS) / 60), m_bulletSpeedW(m_speedW*2), m_bulletSpeedH(m_speedH*2), m_shotDelay(1s),
+    m_vectorPlayers{0, 0}, m_shot{false, false}, m_map(fileName)
 {
     m_scene = new QGraphicsScene(0, 0,
                                  static_cast<qreal>(m_map.getSize_field().width()),
@@ -42,29 +37,34 @@ Mediator::Mediator(const QString &fileName) : m_isGame(false), m_vectorPlayers{0
     m_view->setScene(m_scene);
 }
 
-void Mediator::exec()
+void Mediator::exec(bool fullScrean)
 {
     m_view->installEventFilter(this);
 
     connect(this, &Mediator::endGame, this, &Mediator::slotEndGame);
 
-//    this->m_view->show();
-    this->m_view->showFullScreen();
 
-    QTimer::singleShot(100, [=](){
+    if(fullScrean){
+        this->m_view->showFullScreen();
+    }
+    else {
+        this->m_view->show();
+    }
+
+    QTimer::singleShot(150, [=](){
+
         m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
         m_view->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
         m_view->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
 
         m_isGame = true;
-        m_idTimer =  this->startTimer(1000/60);
+        m_idTimer =  this->startTimer(1000/FPS);
         emit beginGame();
     });
 }
 
 Mediator::~Mediator()
 {
-
     delete m_view;
 }
 
@@ -181,7 +181,7 @@ void Mediator::timerEvent(QTimerEvent *event)
         moveBullet(bullet);
         for(auto &el : m_scene->collidingItems(bullet)) {
             GAME_IS_CONTINUE
-            if(el->type() == static_cast<int>(typeItems::ignoreCollize)) {
+            if(el->type() == static_cast<int>(typeItems::ignoreCollision)) {
                 // nothing
             }
             else {
@@ -198,18 +198,71 @@ void Mediator::timerEvent(QTimerEvent *event)
     m_view->update();
 }
 
+Mediator::duration Mediator::getShotDelay() const
+{
+    return m_shotDelay;
+}
+
+void Mediator::setShotDelay(const duration &shotDelay)
+{
+    m_shotDelay = shotDelay;
+}
+
+qreal Mediator::getBulletSpeedH() const
+{
+    return m_bulletSpeedH;
+}
+
+void Mediator::setBulletSpeedH(const qreal &bulletSpeedH)
+{
+    m_bulletSpeedH = bulletSpeedH;
+}
+
+qreal Mediator::getBulletSpeedW() const
+{
+    return m_bulletSpeedW;
+}
+
+void Mediator::setBulletSpeedW(const qreal &bulletSpeedW)
+{
+    m_bulletSpeedW = bulletSpeedW;
+}
+
+void Mediator::setSpeedH(const qreal &speedH)
+{
+    m_speedH = speedH;
+}
+
+qreal Mediator::getSpeedH() const
+{
+    return m_speedH;
+}
+
+qreal Mediator::getSpeedW() const
+{
+    return m_speedW;
+}
+
+void Mediator::setSpeedW(const qreal &speedW)
+{
+    m_speedW = speedW;
+}
+
 
 
 void Mediator::movePlayers(int i)
 {
+    if(!m_players[i]->getIsLive()){
+        return;
+    }
 
     motion_vector main_vec = getMainVec(m_vectorPlayers[i]);
 
     if(main_vec != motion_vector::No) {
-        qreal Y = -SPEED_H * bool(main_vec == motion_vector::Up)
-                  +SPEED_H * bool(main_vec == motion_vector::Down);
-        qreal X = -SPEED_W * bool(main_vec == motion_vector::Left)
-                  +SPEED_W * bool(main_vec == motion_vector::Right);
+        qreal Y = -m_speedH * bool(main_vec == motion_vector::Up)
+                  +m_speedH * bool(main_vec == motion_vector::Down);
+        qreal X = -m_speedW * bool(main_vec == motion_vector::Left)
+                  +m_speedW * bool(main_vec == motion_vector::Right);
 
         if(qFuzzyIsNull(Y) && qFuzzyIsNull(X)) {
             return;
@@ -224,7 +277,7 @@ void Mediator::movePlayers(int i)
             if(el->type() == static_cast<int>(typeItems::bullet)){
                damage(static_cast<BulletSprite*>(el), m_players[i]);
             }
-            else if(el->type() == static_cast<int>(typeItems::ignoreCollize)){
+            else if(el->type() == static_cast<int>(typeItems::ignoreCollision)){
                 continue;
             }
             else {
@@ -239,7 +292,7 @@ void Mediator::movePlayers(int i)
 
 void Mediator::createBullet(qreal x, qreal y, motion_vector vec)
 {
-    auto bullet = new BulletSprite(m_map);
+    auto bullet = new BulletSprite(m_map, DELAY_ANIMATION);
     bullet->setPos(x, y);
     bullet->setVector(vec);
     bullet->setZValue(10);
@@ -253,7 +306,7 @@ void Mediator::createBullet(qreal x, qreal y, motion_vector vec)
 void Mediator::checkCreateBullet(int i)
 {
     auto now = clock::now();
-    if(m_shot[i] && (now - m_lastShot[i]) > SHOT_DELAY) {
+    if(m_shot[i] && (now - m_lastShot[i]) > m_shotDelay) {
         m_lastShot[i] = now;
         const auto point = m_players[i]->getMuzzle();
         qDebug() << "bullet created on " << point;
@@ -265,10 +318,10 @@ void Mediator::moveBullet(BulletSprite *ptr)
 {
     const auto vec = ptr->getVector();
 
-    qreal Y = -SPEED_H_BULLET * bool(vec == motion_vector::Up)
-              +SPEED_H_BULLET * bool(vec == motion_vector::Down);
-    qreal X = -SPEED_W_BULLET * bool(vec == motion_vector::Left)
-              +SPEED_W_BULLET * bool(vec == motion_vector::Right);
+    qreal Y = -m_bulletSpeedH * bool(vec == motion_vector::Up)
+              +m_bulletSpeedH * bool(vec == motion_vector::Down);
+    qreal X = -m_bulletSpeedW * bool(vec == motion_vector::Left)
+              +m_bulletSpeedW * bool(vec == motion_vector::Right);
 
     ptr->moveOn(X, Y);
 }
@@ -298,7 +351,10 @@ void Mediator::damage(BulletSprite *out, Sprite *to)
 
 void Mediator::hitPlayer(PlayerSprite *ptr)
 {
-    emit endGame(ptr->getNumber());
+    ptr->setIsLive(false);
+    QTimer::singleShot(40*m_map.getSize_effect(), [=](){
+        emit endGame(ptr->getNumber());
+    });
 }
 
 void Mediator::slotEndGame()

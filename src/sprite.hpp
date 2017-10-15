@@ -12,7 +12,7 @@ class Sprite : public QGraphicsItem
 
 public:
 
-    Sprite(const MapField &map, QChar spr, const typeItems type = typeItems::ignoreCollize);
+    Sprite(const MapField &map, QChar spr, const typeItems type = typeItems::ignoreCollision);
 
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;

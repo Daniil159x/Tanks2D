@@ -12,6 +12,15 @@ Sprite::Sprite(const MapField &map, QChar spr, const typeItems type)
 
 void Sprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
+
+#ifdef DEBUG_SPRITE
+    {
+        auto r = mapFromScene(this->x(), this->y());
+        painter->fillRect(static_cast<int>(r.x()), static_cast<int>(r.y()),
+                          this->width(), this->height(), Qt::yellow);
+    }
+#endif
+
     painter->drawImage(boundingRect(), m_img);
 
     Q_UNUSED(option);
@@ -33,7 +42,7 @@ void Sprite::nextFrame()
     m_currIdxFrame = (m_currIdxFrame >= m_map.getSizeImage_forSprites(m_sprChar)) ? m_currIdxFrame : m_currIdxFrame + 1;
 
     if(m_currIdxFrame == m_map.getSizeImage_forSprites(m_sprChar)) {
-        m_type = typeItems::ignoreCollize;
+        m_type = typeItems::ignoreCollision;
     }
     updateImg();
 }
@@ -95,7 +104,7 @@ void Sprite::moveOn(qreal x, qreal y)
 
 bool Sprite::collidesWithItem(const QGraphicsItem *other, Qt::ItemSelectionMode mode) const
 {
-    if(this->type() == static_cast<int>(typeItems::ignoreCollize)) {
+    if(this->type() == static_cast<int>(typeItems::ignoreCollision)) {
         return false;
     }
     else {

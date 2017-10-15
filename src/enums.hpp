@@ -4,7 +4,7 @@
 #include <QMetaEnum>
 
 enum class typeItems {
-    ignoreCollize = 1000,
+    ignoreCollision = 1000,
     breakable,
     player,
     bullet,
