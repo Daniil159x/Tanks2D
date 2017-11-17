@@ -1,22 +1,30 @@
-#include "mediator.hpp"
+﻿#include "mediator.hpp"
 
 #include "playersprite.hpp"
 
 #include <QDebug>
+#include <QPalette>
+#include <QHBoxLayout>
+#include <QLabel>
 
 using namespace std::chrono_literals;
 
-#define FPS 100
-#define DELAY_ANIMATION 40ms
-
-Mediator::Mediator(const QString &fileName) : m_isGame(false), m_speedW((0.3 * FPS) / 60),
-    m_speedH((0.3 * FPS) / 60), m_bulletSpeedW(m_speedW*2), m_bulletSpeedH(m_speedH*2), m_shotDelay(1s),
-    m_vectorPlayers{0, 0}, m_shot{false, false}, m_map(fileName)
+Mediator::Mediator(const QString &fileName, const QString &title, QColor c) : m_isGame(false),
+    m_vectorPlayers{0, 0}, m_shot{false, false}, m_idTimer(-52), m_map(fileName)
 {
     m_scene = new QGraphicsScene(0, 0,
                                  static_cast<qreal>(m_map.getSize_field().width()),
                                  static_cast<qreal>(m_map.getSize_field().height()), this);
     m_view  = new QGraphicsView;
+
+    m_view->setBackgroundBrush(c);
+    m_view->setWindowTitle(title);
+
+    m_labMsg = new QLabel(m_view);
+    m_labMsg->setObjectName("label_msg");
+    m_labMsg->setAlignment(Qt::AlignCenter);
+
+    this->hideLabMsg();
 
     for(auto &ptr : m_map.getFiledSprites()) {
         m_scene->addItem(static_cast<QGraphicsItem*>(ptr.release()));
@@ -51,9 +59,10 @@ void Mediator::exec(bool fullScrean)
         this->m_view->show();
     }
 
-    QTimer::singleShot(150, [=](){
+    QTimer::singleShot(150, [this](){
 
-        m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+        this->updateSize();
+
         m_view->setHorizontalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
         m_view->setVerticalScrollBarPolicy(Qt::ScrollBarPolicy::ScrollBarAlwaysOff);
 
@@ -61,6 +70,8 @@ void Mediator::exec(bool fullScrean)
         m_idTimer =  this->startTimer(1000/FPS);
         emit beginGame();
     });
+
+
 }
 
 Mediator::~Mediator()
@@ -70,43 +81,45 @@ Mediator::~Mediator()
 
 bool Mediator::eventFilter(QObject *obj, QEvent *event)
 {
+
     Q_UNUSED(obj);
     if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         auto eventKey = static_cast<QKeyEvent*>(event);
 
+
         switch (eventKey->key()) {
         // player[0]
         case Qt::Key_W:
-            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Up);
+            m_vectorPlayers[0] ^= enum_cast<int>(motion_vector::Up);
             break;
         case Qt::Key_S:
-            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Down);
+            m_vectorPlayers[0] ^= enum_cast<int>(motion_vector::Down);
             break;
         case Qt::Key_D:
-            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Right);
+            m_vectorPlayers[0] ^= enum_cast<int>(motion_vector::Right);
             break;
         case Qt::Key_A:
-            m_vectorPlayers[0] ^= motion_vector_cast<int>(motion_vector::Left);
+            m_vectorPlayers[0] ^= enum_cast<int>(motion_vector::Left);
             break;
         // player[1]
         case Qt::Key_8:
             if(eventKey->modifiers()){
-                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Up);
+                m_vectorPlayers[1] ^= enum_cast<int>(motion_vector::Up);
             }
             break;
         case Qt::Key_5:
             if(eventKey->modifiers()){
-                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Down);
+                m_vectorPlayers[1] ^= enum_cast<int>(motion_vector::Down);
             }
             break;
         case Qt::Key_6:
             if(eventKey->modifiers()){
-                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Right);
+                m_vectorPlayers[1] ^= enum_cast<int>(motion_vector::Right);
             }
             break;
         case Qt::Key_4:
             if(eventKey->modifiers()){
-                m_vectorPlayers[1] ^= motion_vector_cast<int>(motion_vector::Left);
+                m_vectorPlayers[1] ^= enum_cast<int>(motion_vector::Left);
             }
             break;
         // bullet
@@ -118,22 +131,45 @@ bool Mediator::eventFilter(QObject *obj, QEvent *event)
                 m_shot[1] = (event->type() == QEvent::KeyPress);
             }
             break;
+        // functional
+        case Qt::Key_Escape:
+            // FIXME: после удаления таймера ругается на удаление таймера
+            this->slotEndGame();
+            m_view->removeEventFilter(this);
+            emit exit();
+            break;
+        case Qt::Key_Pause:
+        case Qt::Key_P:
+            if(eventKey->type() != QEvent::KeyRelease) {
+                break;
+            }
+
+            m_isGame = !m_isGame;
+            if(m_isGame) {
+                hideLabMsg();
+                emit continueGame();
+            }
+            else {
+                showLabMsg("Pause");
+                emit pauseGame();
+            }
+            break;
         }
 
         return true;
     }
     else if(event->type() == QEvent::Resize){
-        m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+        this->updateSize();
         return false;
     }
     return false;
 }
 
 motion_vector getMainVec(int vec){
-    const auto up = motion_vector_cast<int>(motion_vector::Up);
-    const auto down = motion_vector_cast<int>(motion_vector::Down);
-    const auto left = motion_vector_cast<int>(motion_vector::Left);
-    const auto right = motion_vector_cast<int>(motion_vector::Right);
+    const auto up = enum_cast<int>(motion_vector::Up);
+    const auto down = enum_cast<int>(motion_vector::Down);
+    const auto left = enum_cast<int>(motion_vector::Left);
+    const auto right = enum_cast<int>(motion_vector::Right);
 
     if(vec & up) {
         return motion_vector::Up;
@@ -198,57 +234,20 @@ void Mediator::timerEvent(QTimerEvent *event)
     m_view->update();
 }
 
-Mediator::duration Mediator::getShotDelay() const
+void Mediator::setShotDelayGen(const Menu::generator_time_t &shotDelayGen)
 {
-    return m_shotDelay;
+    m_shotDelayGen = shotDelayGen;
 }
 
-void Mediator::setShotDelay(const duration &shotDelay)
+void Mediator::setSpeedBulletGen(const Menu::generator_pos_t &speedBulletGen)
 {
-    m_shotDelay = shotDelay;
+    m_speedBulletGen = speedBulletGen;
 }
 
-qreal Mediator::getBulletSpeedH() const
+void Mediator::setSpeedGen(const Menu::generator_pos_t &speedGen)
 {
-    return m_bulletSpeedH;
+    m_speedGen = speedGen;
 }
-
-void Mediator::setBulletSpeedH(const qreal &bulletSpeedH)
-{
-    m_bulletSpeedH = bulletSpeedH;
-}
-
-qreal Mediator::getBulletSpeedW() const
-{
-    return m_bulletSpeedW;
-}
-
-void Mediator::setBulletSpeedW(const qreal &bulletSpeedW)
-{
-    m_bulletSpeedW = bulletSpeedW;
-}
-
-void Mediator::setSpeedH(const qreal &speedH)
-{
-    m_speedH = speedH;
-}
-
-qreal Mediator::getSpeedH() const
-{
-    return m_speedH;
-}
-
-qreal Mediator::getSpeedW() const
-{
-    return m_speedW;
-}
-
-void Mediator::setSpeedW(const qreal &speedW)
-{
-    m_speedW = speedW;
-}
-
-
 
 void Mediator::movePlayers(int i)
 {
@@ -259,10 +258,13 @@ void Mediator::movePlayers(int i)
     motion_vector main_vec = getMainVec(m_vectorPlayers[i]);
 
     if(main_vec != motion_vector::No) {
-        qreal Y = -m_speedH * bool(main_vec == motion_vector::Up)
-                  +m_speedH * bool(main_vec == motion_vector::Down);
-        qreal X = -m_speedW * bool(main_vec == motion_vector::Left)
-                  +m_speedW * bool(main_vec == motion_vector::Right);
+        const auto [speedH, speedW] = m_speedGen();
+
+
+        qreal Y = -speedH * bool(main_vec == motion_vector::Up)
+                  +speedH * bool(main_vec == motion_vector::Down);
+        qreal X = -speedW * bool(main_vec == motion_vector::Left)
+                  +speedW * bool(main_vec == motion_vector::Right);
 
         if(qFuzzyIsNull(Y) && qFuzzyIsNull(X)) {
             return;
@@ -306,7 +308,7 @@ void Mediator::createBullet(qreal x, qreal y, motion_vector vec)
 void Mediator::checkCreateBullet(int i)
 {
     auto now = clock::now();
-    if(m_shot[i] && (now - m_lastShot[i]) > m_shotDelay) {
+    if(m_shot[i] && (now - m_lastShot[i]) > m_shotDelayGen()) {
         m_lastShot[i] = now;
         const auto point = m_players[i]->getMuzzle();
         qDebug() << "bullet created on " << point;
@@ -318,10 +320,12 @@ void Mediator::moveBullet(BulletSprite *ptr)
 {
     const auto vec = ptr->getVector();
 
-    qreal Y = -m_bulletSpeedH * bool(vec == motion_vector::Up)
-              +m_bulletSpeedH * bool(vec == motion_vector::Down);
-    qreal X = -m_bulletSpeedW * bool(vec == motion_vector::Left)
-              +m_bulletSpeedW * bool(vec == motion_vector::Right);
+    const auto [bulletSpeedW, bulletSpeedH] = m_speedBulletGen();
+
+    qreal Y = -bulletSpeedH * bool(vec == motion_vector::Up)
+              +bulletSpeedH * bool(vec == motion_vector::Down);
+    qreal X = -bulletSpeedW * bool(vec == motion_vector::Left)
+              +bulletSpeedW * bool(vec == motion_vector::Right);
 
     ptr->moveOn(X, Y);
 }
@@ -345,22 +349,61 @@ void Mediator::damage(BulletSprite *out, Sprite *to)
             hitPlayer(static_cast<PlayerSprite*>(to));
             break;
         default:
-            throw std::logic_error("Mediator::damage: defoult branch");
+            throw std::logic_error("Mediator::damage: default branch");
     }
 }
 
 void Mediator::hitPlayer(PlayerSprite *ptr)
 {
-    ptr->setIsLive(false);
-    QTimer::singleShot(40*m_map.getSize_effect(), [=](){
-        emit endGame(ptr->getNumber());
-    });
+    if(m_players[0]->getIsLive() && m_players[1]->getIsLive()/* ptr->getIsLive()*/){
+        ptr->setIsLive(false);
+        QTimer::singleShot(40*m_map.getSize_effect(), [=](){
+            this->showLabMsg(QString("Player %1 lost").arg(ptr->getNumber()));
+            emit endGame(ptr->getNumber());
+        });
+    }
+}
+
+//#include <iostream>
+
+//std::ostream& operator << (std::ostream &out, const QRect& r) {
+//    out << "QRect(";
+//    out << r.x() << ", " << r.y() << ", " << r.width() << ", " << r.height() << ")";
+//    out << std::endl;
+//    return out;
+//}
+
+//std::ostream& operator << (std::ostream &out, const QPoint& r) {
+//    out << "QPoint(";
+//    out << r.x() << ", " << r.y() << ")";
+//    out << std::endl;
+//    return out;
+//}
+
+void Mediator::updateSize()
+{
+    m_view->fitInView(m_scene->sceneRect(), Qt::KeepAspectRatio);
+    m_labMsg->setGeometry(0, 0, m_view->width(), m_view->height());
+}
+
+void Mediator::showLabMsg(const QString &str)
+{
+    m_labMsg->setText(str);
+    m_labMsg->setHidden(false);
+}
+
+void Mediator::hideLabMsg()
+{
+    m_labMsg->setHidden(true);
 }
 
 void Mediator::slotEndGame()
 {
-    m_isGame = false;
-    this->killTimer(m_idTimer);
+    if(m_idTimer >= 0){
+        m_isGame = false;
+        this->killTimer(m_idTimer);
+        m_idTimer = -52;
+    }
 }
 
 void Mediator::deleteBullet(QObject *ptr)

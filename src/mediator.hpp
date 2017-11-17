@@ -1,4 +1,4 @@
-#ifndef MEDIATOR_HPP
+﻿#ifndef MEDIATOR_HPP
 #define MEDIATOR_HPP
 
 #include <QGraphicsScene>
@@ -6,6 +6,7 @@
 
 #include <QObject>
 #include <QList>
+#include <QLabel>
 
 #include <chrono>
 
@@ -15,42 +16,38 @@
 #include "playersprite.hpp"
 
 
+#include "menu.hpp"
+
 class Mediator : public QObject
 {
     Q_OBJECT
 
-    using clock = std::chrono::steady_clock;
-    using time_poing = clock::time_point;
-    using duration = clock::duration;
 
 public:
-    explicit Mediator(const QString &fileName);
+    using clock = Menu::clock;
+    using duration = Menu::duration;
+    using time_poing = Menu::time_point;
+
+    explicit Mediator(const QString &fileName, const QString &title, QColor c);
 
     void exec(bool fullScrean = true);
 
     virtual ~Mediator();
 
 
-    // TODO: заменить на генераторы
-    qreal getSpeedW() const;
-    void setSpeedW(const qreal &getSpeedW);
+    void setSpeedGen(const Menu::generator_pos_t &speedGen);
 
-    qreal getSpeedH() const;
-    void setSpeedH(const qreal &speedH);
+    void setSpeedBulletGen(const Menu::generator_pos_t &speedBulletGen);
 
-    qreal getBulletSpeedW() const;
-    void setBulletSpeedW(const qreal &bulletSpeedW);
-
-    qreal getBulletSpeedH() const;
-    void setBulletSpeedH(const qreal &bulletSpeedH);
-
-    duration getShotDelay() const;
-    void setShotDelay(const duration &shotDelay);
+    void setShotDelayGen(const Menu::generator_time_t &shotDelayGen);
 
 signals:
     void keyEvent(QKeyEvent *ev);
-    void endGame(int player);
+    void endGame(int loser);
     void beginGame();
+    void exit();
+    void pauseGame();
+    void continueGame();
 protected:
     virtual bool eventFilter(QObject *obj, QEvent *event) override;
     virtual void timerEvent(QTimerEvent *event) override;
@@ -58,12 +55,18 @@ protected:
 private:
     QGraphicsScene *m_scene;
     QGraphicsView  *m_view;
+    QLabel         *m_labMsg;
 
     bool m_isGame;
 
-    qreal m_speedW, m_speedH;
-    qreal m_bulletSpeedW, m_bulletSpeedH;
-    duration m_shotDelay;
+//    qreal m_speedW, m_speedH;
+//    qreal m_bulletSpeedW, m_bulletSpeedH;
+//    duration m_shotDelay;
+
+    Menu::generator_pos_t  m_speedGen;
+    Menu::generator_pos_t  m_speedBulletGen;
+    Menu::generator_time_t m_shotDelayGen;
+
 
     PlayerSprite *m_players[2];
     int           m_vectorPlayers[2];
@@ -84,6 +87,11 @@ private:
     void moveBullet(BulletSprite *ptr);
     void damage(BulletSprite *out, Sprite *to);
     void hitPlayer(PlayerSprite *ptr);
+
+    void updateSize();
+    void showLabMsg(const QString &str);
+    void hideLabMsg();
+
 
 private slots:
     void slotEndGame();

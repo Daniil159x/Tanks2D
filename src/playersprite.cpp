@@ -1,4 +1,4 @@
-#include "playersprite.hpp"
+﻿#include "playersprite.hpp"
 
 #include <QGraphicsScene>
 #include <QPainter>
@@ -14,7 +14,7 @@ PlayerSprite::PlayerSprite(const MapField &map, QChar sprChar)
     static int n = 0;
 
     // TODO: костыль с присваением порядковых номеров игрокам
-    m_number = ++n;
+    m_number = (n++ % 2) + 1;
 }
 
 void PlayerSprite::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

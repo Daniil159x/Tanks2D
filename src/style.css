@@ -1,0 +1,91 @@
+﻿/*    text    */
+QLabel, QPushButton, QListWidget, QCheckBox, QComboBox {
+    font-size: 12pt;
+    font-weight: normal;
+    color: black;
+}
+
+/*    border    */
+QPushButton, QListWidget, QGroupBox, QComboBox {
+    border: 2px solid black;
+    border-radius: 5px;
+}
+
+/*    background color    */
+QPushButton, QListWidget, QGroupBox, QComboBox {
+    background-color: rgba(188, 226, 226, 80%);
+}
+
+QPushButton {
+    margin:  20px;
+    padding: 10px;
+    height:  30%;
+}
+
+QPushButton#GameButton {
+}
+
+QPushButton#SettingButton {
+}
+
+QPushButton#ExitButton {
+}
+
+QPushButton#BackButton {
+}
+
+QPushButton#pB_color {
+    max-height: 40%;
+}
+
+QListWidget#ListMaps {
+    margin:  20px;
+}
+
+QScrollBar:vertical {
+    width: 0;
+}
+
+QPushButton#pB_color {
+    height:  80%;
+    margin:  10px;
+    padding: 0;
+}
+
+QGroupBox {
+    background-color: rgba(188, 226, 226, 60%);
+}
+
+QCheckBox#chBox_fullScreen {
+    margin-right:  30px;
+}
+
+QComboBox#cbBox_compexity {
+    width: 120%;
+    height: 35%;
+}
+
+QComboBox::drop-down {
+    width: 30px;
+}
+
+QComboBox::down-arrow {
+    margin: 3px;
+    image: url(:/back/arrow.png);
+}
+
+QCheckBox::indicator {
+    width: 20%;
+    height: 20%;
+}
+
+QLabel#label_msg[visible="true"] {
+}
+
+QLabel#label_msg[visible="false"] {
+    font-size: 50px;
+    font-weight: both;
+    color: black;
+
+    background-color: rgba(10, 10, 10, 50);
+}

@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/back">
+        <file alias="menu_background.jpg">menu_background.jpg</file>
+        <file>arrow.png</file>
+    </qresource>
+    <qresource prefix="/style">
+        <file alias="style.css">style.css</file>
+    </qresource>
+</RCC>

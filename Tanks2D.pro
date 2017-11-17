@@ -12,6 +12,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = Tanks2D
 TEMPLATE = app
 
+
+# TODO: не работает дебаг спрайтов
 #DEFINES += DEBUG_SPRITE
 
 SOURCES += \
@@ -20,7 +22,9 @@ SOURCES += \
             src/playersprite.cpp \
             src/bulletsprite.cpp \
             src/mapfield.cpp \
-    src/mediator.cpp
+    src/mediator.cpp \
+    src/menu.cpp \
+    src/settingview.cpp
 
 HEADERS += \
             src/sprite.hpp \
@@ -28,7 +32,14 @@ HEADERS += \
             src/playersprite.hpp \
             src/bulletsprite.hpp \
             src/mapfield.hpp \
-    src/mediator.hpp
+    src/mediator.hpp \
+    src/menu.hpp \
+    src/settingview.hpp
 
-OTHER_FILES += maps/*/*
+RESOURCES += \
+    src/resource.qrc
+
+FORMS += \
+    src/settingview.ui
+
 
